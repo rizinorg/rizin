@@ -16,6 +16,8 @@
 #define H_NIB(x) (((x) & 0xF0) >> 4) ///< High nibble
 #define L_NIB(x) ((x) & 0x0F) ///< Low nibble
 
+#define bitmask(val, mask) ((val & mask) == mask)
+
 // Core Special Function Registers (CSFR)
 #define BASE_GPR_ADDR    0xFE10U ///< Base address for calculate GPR physical address (also REG_CP)
 #define BASE_SFR_ADDR    0xFE00U ///< Base address for calculate SFR physical address (also REG_DPP0)

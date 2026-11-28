@@ -7,6 +7,7 @@
 #include <analysis_private.h>
 #include <rz_analysis.h>
 #include <rz_util/rz_str_util.h>
+#include "c166/c166_il.h"
 
 #include "librz/arch/isa/c166/c166_disas.h"
 
@@ -778,7 +779,7 @@ static void c166_op_dst_reg_src_mem(const RzAnalysis *analysis, RzAnalysisOp *op
 	op->mmios[op->mmios_count] = op->dst->base;
 	op->mmios_count++;
 	op->src[0] = c166_new_mem_value(analysis, instr, mem);
-	op->mmios[op->mmios_count] = addr; // op->src[0]->base;
+	op->mmios[op->mmios_count] = addr;
 	op->mmios_count++;
 }
 
@@ -1084,9 +1085,13 @@ static void c166_op_set_type(RZ_NONNULL const C166_Inst *instr, RzAnalysis *anal
 		break;
 	case C166_POP_reg:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 4;
 		break;
 	case C166_PUSH_reg:
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		op->stackptr = 4;
 		break;
 	case C166_SHL_Rwn_Rwm:
 		c166_op_rn_rm(analysis, op, operand1, RZ_ANALYSIS_OP_TYPE_SHL, false);
@@ -1421,7 +1426,12 @@ static int c166_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			instr.instr, RZ_STR_ISNOTEMPTY(instr.operands) ? " " : "", instr.operands);
 	}
 
+	// set RzIL
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		rz_c166_il_opcode(analysis, op, buf);
+	}
 	c166_maybe_deactivate_ext(state, instr.addr);
+
 	return op->size;
 }
 
@@ -1436,6 +1446,12 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	IP	.32	0	0\n"
 
 		"gpr	ODP3	.16	61894	0\n"
+
+		"gpr	XADRS5	.16	61468	0\n" ///< F01C; X-Peripheral Address Select Register 5
+
+		"gpr	PLLCON	.16	61904	0\n" ///< F1D0; PLL Control Register
+		"gpr	SYSCON3	.16	61908	0\n" ///< F1D4; Power Management
+		"gpr	SYSCON1	.16	61916	0\n" ///< F1DC; System Configuration Register SYSCON1
 
 		"gpr	SP	.16	64512	0\n" ///< FC00 == SP | Temporarily moved here to avoid confusion in rzil
 
@@ -1495,8 +1511,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"flg	BP	.1	65048.1	0\n" ///< CPU Core: Enable Branch Prediction Unit
 		"flg	ZCJ	.1	65048.0	0\n" ///< CPU Core: Enable Zero Cycle Jump function
 		"gpr	CPUCON2	.16	65050	0\n" ///< FE1A; CPU Core Control Register 2
-		"gpr	r_FE1C	.16	65052	0\n" ///< FE1C; RESERVED
-		"gpr	r_FE1E	.16	65054	0\n" ///< FE1E; RESERVED
+		"gpr	CPUCON3	.16	65052	0\n" ///< FE1C; CPU Core Control Register 3
+		"gpr	CPUCON4	.16	65054	0\n" ///< FE1E; CPU Core Control Register 4
 		"gpr	r_FE20	.16	65056	0\n" ///< FE20; RESERVED
 		"gpr	r_FE22	.16	65058	0\n" ///< FE22; RESERVED
 		"gpr	r_FE24	.16	65060	0\n" ///< FE24; RESERVED
@@ -1710,7 +1726,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r_FFA4	.16	65444	0\n" ///< FFA4; RESERVED
 		"gpr	r_FFA6	.16	65446	0\n" ///< FFA6; RESERVED
 		"gpr	r_FFA8	.16	65448	0\n" ///< FFA8; RESERVED
-		"gpr	r_FFAA	.16	65450	0\n" ///< FFAA; RESERVED
+		"gpr	FOCON	.16	65450	0\n" ///< FFAA; Frequency Output Signal
 		"gpr	TFR	.16	65452	0\n" ///< FFAC; Trap Flag Register
 		"gpr	WDTCON	.16	65454	0\n" ///< FFAE; Watchdog Timer Control Register
 		"gpr	S0CON	.16	65456	0\n" ///< FFB0; Serial Channel 0 Control Register
@@ -1764,6 +1780,7 @@ RzAnalysisPlugin rz_analysis_plugin_c166 = {
 	.op = &c166_op,
 	.archinfo = &archinfo,
 	.get_reg_profile = &get_reg_profile,
+	.il_config = rz_c166_il_config,
 	.init = &c16x_init,
 	.fini = &c16x_fini,
 };

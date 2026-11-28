@@ -1,0 +1,601 @@
+NAME=Testing the decryption in emulateme 1
+FILE=bins/omf/omf166/emulateme
+TIMEOUT=30
+CMDS=<<EOF
+e asm.cpu=c166-generic
+aaa
+e io.cache=1
+s entry0
+aezi
+aezvt
+echo "== sd +0x1a"
+sd +0x1a
+aoip 1
+aezvt~BUSCON0
+aezsu 0x0000001e
+aezvt~BUSCON0
+aezsu 0x00000022
+aezvt~BUSCON0
+echo "== run to 0x000001ac"
+aezsu 0x000001ac
+echo
+aezvt~BUSCON0
+echo
+s sym.decrypt
+px @ 0x4 @! 0x11
+px @ 0xe200 @! 0x11
+EOF
+EXPECT=<<EOF
+variable type value      
+-------------------------
+PC       bitv 0x00000000
+BUSCON0  bitv 0x0680
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
+CSP      bitv 0x00
+DPP0     bitv 0x000
+DPP1     bitv 0x001
+DPP2     bitv 0x002
+DPP3     bitv 0x003
+FOCON    bitv 0x0000
+P8       bitv 0x0000
+PLLCON   bitv 0x0000
+PSW      bitv 0x0000
+SGTDIS   bool false
+SP       bitv 0xfc00
+SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
+c        bool false
+e        bool false
+n        bool false
+r0       bitv 0xfc00
+r1       bitv 0xfc00
+r10      bitv 0x0000
+r11      bitv 0x0000
+r12      bitv 0x0000
+r13      bitv 0x0000
+r14      bitv 0x0000
+r15      bitv 0x0000
+r2       bitv 0xfa00
+r3       bitv 0xfc00
+r4       bitv 0x0000
+r5       bitv 0x0000
+r6       bitv 0x0000
+r7       bitv 0x0000
+r8       bitv 0x0000
+r9       bitv 0x0000
+usr0     bool false
+usr1     bool false
+v        bool false
+z        bool false
+
+== sd +0x1a
+0x1a
+(seq
+  (set old
+    (var BUSCON0))
+  (set masked_old
+    (&
+      (var old)
+      (~
+        (bv 16 0x3f))))
+  (set res
+    (|
+      (var masked_old)
+      (bv 16 0x2e)))
+  (set BUSCON0
+    (var res))
+  (set e
+    false)
+  (set z
+    (ite
+      (is_zero
+        (var res))
+      true
+      false))
+  (set v
+    false)
+  (set c
+    false)
+  (set n
+    (msb
+      (cast 16
+        false
+        (var res)))))
+BUSCON0  bitv 0x0680
+BUSCON0  bitv 0x06ae
+BUSCON0  bitv 0x04ae
+== run to 0x000001ac
+
+BUSCON0  bitv 0x04ae
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000004  416e 7943 6f6c 6f75 7259 6f75 4c69 6b65  AnyColourYouLike
+0x00000014  00                                       .
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000e200  4865 6c6c 6f20 6672 6f6d 2052 7a49 4c21  Hello from RzIL!
+0x0000e210  00                                       .
+EOF
+RUN
+
+NAME=Testing the decryption in emulateme 2
+FILE=bins/omf/omf166/emulateme
+TIMEOUT=30
+CMDS=<<EOF
+e asm.cpu=c166-generic
+e io.cache=1
+aaa
+aezi
+aezvt
+echo =======
+aezsu 0x00001ac
+echo =======
+echo
+px @ 0x4 @! 0x11
+echo =======
+px @ 0xfbfc @! 0x11
+echo =======
+px @ 0xe200 @! 0x11
+echo =======
+px @ 0x18006 @! 0x11
+echo =======
+EOF
+EXPECT=<<EOF
+variable type value      
+-------------------------
+PC       bitv 0x00000000
+BUSCON0  bitv 0x0680
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
+CSP      bitv 0x00
+DPP0     bitv 0x000
+DPP1     bitv 0x001
+DPP2     bitv 0x002
+DPP3     bitv 0x003
+FOCON    bitv 0x0000
+P8       bitv 0x0000
+PLLCON   bitv 0x0000
+PSW      bitv 0x0000
+SGTDIS   bool false
+SP       bitv 0xfc00
+SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
+c        bool false
+e        bool false
+n        bool false
+r0       bitv 0xfc00
+r1       bitv 0xfc00
+r10      bitv 0x0000
+r11      bitv 0x0000
+r12      bitv 0x0000
+r13      bitv 0x0000
+r14      bitv 0x0000
+r15      bitv 0x0000
+r2       bitv 0xfa00
+r3       bitv 0xfc00
+r4       bitv 0x0000
+r5       bitv 0x0000
+r6       bitv 0x0000
+r7       bitv 0x0000
+r8       bitv 0x0000
+r9       bitv 0x0000
+usr0     bool false
+usr1     bool false
+v        bool false
+z        bool false
+
+=======
+=======
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000004  416e 7943 6f6c 6f75 7259 6f75 4c69 6b65  AnyColourYouLike
+0x00000014  00                                       .
+=======
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fbfc  a001 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000fc0c  00                                       .
+=======
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000e200  4865 6c6c 6f20 6672 6f6d 2052 7a49 4c21  Hello from RzIL!
+0x0000e210  00                                       .
+=======
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00018006  5153 4d77 5814 515f 456c 177f 6e78 7f1c  QSMwX.Q_El..nx..
+0x00018016  00                                       .
+=======
+EOF
+RUN
+
+NAME=Testing example measure
+FILE=bins/omf/omf166/measure
+TIMEOUT=30
+CMDS=<<EOF
+e asm.cpu=c166-generic
+e io.cache=1
+aaa
+aezi
+aezvt
+aezsu 0x00c0146e
+echo =======
+aezvt
+EOF
+EXPECT=<<EOF
+variable type value      
+-------------------------
+PC       bitv 0x00c00000
+BUSCON0  bitv 0x0680
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
+CSP      bitv 0xc0
+DPP0     bitv 0x000
+DPP1     bitv 0x001
+DPP2     bitv 0x002
+DPP3     bitv 0x003
+FOCON    bitv 0x0000
+P8       bitv 0x0000
+PLLCON   bitv 0x0000
+PSW      bitv 0x0000
+SGTDIS   bool false
+SP       bitv 0xfc00
+SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
+c        bool false
+e        bool false
+n        bool false
+r0       bitv 0xfc00
+r1       bitv 0xfc00
+r10      bitv 0x0000
+r11      bitv 0x0000
+r12      bitv 0x0000
+r13      bitv 0x0000
+r14      bitv 0x0000
+r15      bitv 0x0000
+r2       bitv 0xfa00
+r3       bitv 0xfc00
+r4       bitv 0x0000
+r5       bitv 0x0000
+r6       bitv 0x0000
+r7       bitv 0x0000
+r8       bitv 0x0000
+r9       bitv 0x0000
+usr0     bool false
+usr1     bool false
+v        bool false
+z        bool false
+
+=======
+variable type value      
+-------------------------
+PC       bitv 0x00c0146e
+BUSCON0  bitv 0x0000
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
+CSP      bitv 0xc0
+DPP0     bitv 0x004
+DPP1     bitv 0x005
+DPP2     bitv 0x300
+DPP3     bitv 0x003
+FOCON    bitv 0x0000
+P8       bitv 0x0000
+PLLCON   bitv 0x7889
+PSW      bitv 0x0000
+SGTDIS   bool false
+SP       bitv 0xf800
+SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
+c        bool true
+e        bool false
+n        bool false
+r0       bitv 0x0200
+r1       bitv 0x00ec
+r10      bitv 0x0000
+r11      bitv 0x0000
+r12      bitv 0x0000
+r13      bitv 0x0000
+r14      bitv 0x0000
+r15      bitv 0x0000
+r2       bitv 0x0000
+r3       bitv 0xc25c
+r4       bitv 0x0004
+r5       bitv 0x0000
+r6       bitv 0x0000
+r7       bitv 0x0000
+r8       bitv 0x0004
+r9       bitv 0x00c0
+usr0     bool false
+usr1     bool false
+v        bool false
+z        bool true
+
+EOF
+RUN
+
+NAME=c166: checking analysis information for coverage
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=c166
+e asm.cpu=c166-generic
+e io.cache=1
+wx AB0A @ 0
+wx 0000 @ 2
+wx FB88 @ 4
+aezi
+aezv PSW 0x13
+aezv r10 4
+aezv SP 0x10
+wx 0000 @ 0x10
+wx 0000 @ 0x12
+aezse 2
+aezv SP
+EOF
+EXPECT=<<EOF
+PSW = 0x13
+r10 = 0x4
+SP = 0x10
+pc_write(old: 0x0, new: 0x2)
+var_write(name: SP, old: 0x10, new: 0xe)
+mem_write(addr: 0xe, old: 0x0, new: 0x2)
+pc_write(old: 0x2, new: 0x4)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: CSP, old: 0x0, new: 0x0)
+var_write(name: PSW, old: 0x13, new: 0x0)
+var_write(name: SP, old: 0xe, new: 0x14)
+pc_write(old: 0x6, new: 0x2)
+ SP: 0x0014
+EOF
+RUN
+
+NAME=c166: DPP addresses use the selected page
+FILE=malloc://131072
+CMDS=<<EOF
+e asm.arch=c166
+e asm.cpu=c166-generic
+wx F6F00040 @ 0
+wx 42F10040 @ 4
+wx F3F40040 @ 8
+
+wx ae @ 0x4000
+aezi
+aezv DPP1 5
+aezv r0 0x1234
+aezv r1 0
+aezv r2 0xabcd
+aezsue 0x8
+aezv DPP1 1
+aezsue 0xc
+px 2 @ 0x14000
+px 2 @ 0x4000
+aezv r2
+EOF
+EXPECT=<<EOF
+DPP1 = 0x5
+r0 = 0x1234
+r1 = 0x0
+r2 = 0xabcd
+0x00000000 [f6f00040] mov 0xfe02:0x0000, r0
+(seq (set src (var r0)) (set e (ite (== (var src) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var src)) true false)) (set n (msb (cast 16 false (var src)))) (storew 0 (+ (<< (& (cast 32 false (var DPP1)) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x0)) (var src)))
+pc_write(old: 0x0, new: 0x4)
+var_read(name: r0, value: 0x1234)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x0)
+var_read(name: DPP1, value: 0x5)
+mem_write(addr: 0x14000, old: 0x0, new: 0x1234)
+
+0x00000004 [42f10040] cmp r1, 0xfe02:0x0000
+(seq (set op1_val (var r1)) (set dpp_val (+ (<< (& (cast 32 false (var DPP1)) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x0))) (set op2_val (loadw 0 16 (cast 32 false (var dpp_val)))) (set res (ite (&& (ule (var op1_val) (var op2_val)) (! (== (var op1_val) (var op2_val)))) (- (cast 16 false (var op1_val)) (cast 16 false (var op2_val))) (cast 16 false (- (var op1_val) (var op2_val))))) (set e (ite (== (var op2_val) (bv 16 0x8000)) true false)) (set z (== (var op1_val) (var op2_val))) (set v (== (var res) (bv 16 0xffff))) (set c (&& (ule (var op1_val) (var op2_val)) (! (== (var op1_val) (var op2_val))))) (set n (msb (cast 16 false (var res)))))
+pc_write(old: 0x4, new: 0x8)
+var_read(name: r1, value: 0x0)
+var_read(name: DPP1, value: 0x5)
+mem_read(addr: 0x14000, value: 0x1234)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: v, old: 0x0, new: 0x0)
+var_write(name: c, old: 0x0, new: 0x1)
+var_write(name: n, old: 0x0, new: 0x1)
+
+DPP1 = 0x1
+0x00000008 [f3f40040] movb rl2, 0xfe02:0x0000
+(seq (set dpp_val (+ (<< (& (cast 32 false (var DPP1)) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x0))) (set val (loadw 0 8 (cast 32 false (var dpp_val)))) (set rw (var r2)) (set rh (& (var rw) (bv 16 0xff00))) (set r2 (| (var rh) (cast 16 false (var val)))) (set e (ite (== (var val) (bv 8 0x80)) true false)) (set z (ite (is_zero (var val)) true false)) (set n (msb (cast 16 false (var val)))))
+pc_write(old: 0x8, new: 0xc)
+var_read(name: DPP1, value: 0x1)
+mem_read(addr: 0x4000, value: 0xae)
+var_read(name: r2, value: 0xabcd)
+var_write(name: r2, old: 0xabcd, new: 0xabae)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x0)
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00014000  3412                                     4.
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00004000  ae00                                     ..
+ r2: 0xabae
+EOF
+RUN
+
+NAME=c166: EXTP indexed load uses the full page number
+FILE=malloc://131072
+CMDS=<<EOF
+e asm.arch=c166
+e asm.cpu=c166-generic
+wx F4010022 @ 0   # movb rl0, [r1+#0x2200]
+wx A5 @ 0x2200
+wx 5A @ 0x12200
+aaa
+aezi
+aezv r1 0
+aezsue 0x4
+aezv r0
+echo ======
+wx D7400400 @ 0   # extp #0x0004, #1
+wx F4010022 @ 4   # movb rl0, [r1+#0x2200]
+wx A5 @ 0x2200
+wx 5A @ 0x12200
+aezi
+aezv r1 0
+aezsue 0x8
+aezv r0
+EOF
+EXPECT=<<EOF
+r1 = 0x0
+0x00000000 [f4010022] movb rl0, [r1+#0x2200]
+(seq (set addr (+ (cast 32 false (var r1)) (bv 32 0x2200))) (set load (loadw 0 8 (cast 32 false (var addr)))) (set rw (var r0)) (set rh (& (var rw) (bv 16 0xff00))) (set r0 (| (var rh) (cast 16 false (var load)))) (set e (ite (== (var load) (bv 8 0x80)) true false)) (set z (ite (is_zero (var load)) true false)) (set n (msb (cast 8 false (var load)))))
+pc_write(old: 0x0, new: 0x4)
+var_read(name: r1, value: 0x0)
+mem_read(addr: 0x2200, value: 0xa5)
+var_read(name: r0, value: 0xfc00)
+var_write(name: r0, old: 0xfc00, new: 0xfca5)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x1)
+
+ r0: 0xfca5
+======
+r1 = 0x0
+0x00000000 [d7400400] extp #0x0004, #1
+empty
+pc_write(old: 0x0, new: 0x4)
+
+0x00000004 [f4010022] movb rl0, [r1+#0x2200]
+(seq (set addr (+ (<< (& (bv 32 0x4) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x2200))) (set addr (+ (var addr) (cast 32 false (var r1)))) (set load (loadw 0 8 (cast 32 false (var addr)))) (set rw (var r0)) (set rh (& (var rw) (bv 16 0xff00))) (set r0 (| (var rh) (cast 16 false (var load)))) (set e (ite (== (var load) (bv 8 0x80)) true false)) (set z (ite (is_zero (var load)) true false)) (set n (msb (cast 8 false (var load)))))
+pc_write(old: 0x4, new: 0x8)
+var_read(name: r1, value: 0x0)
+mem_read(addr: 0x12200, value: 0x5a)
+var_read(name: r0, value: 0xfc00)
+var_write(name: r0, old: 0xfc00, new: 0xfc5a)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x0)
+
+ r0: 0xfc5a
+EOF
+RUN
+
+NAME=c166: BFLDH and BFLDL update masked RAM bits
+FILE=malloc://65536
+CMDS=<<EOF
+e asm.arch=c166
+e asm.cpu=c166-generic
+wx 0A0C030F1A0C0F03 @ 0
+wx ABCD @ 0xFD18
+aezi
+aezsue 0x4
+px 2 @ 0xFD18
+aezv e
+aezsue 0x8
+px 2 @ 0xFD18
+aezv e
+EOF
+EXPECT=<<EOF
+0x00000000 [0a0c030f] bfldl 0xfd18, #0x03, #0x0f
+(seq (set addr (cast 32 false (bv 16 0xfd18))) (set old (loadw 0 16 (var addr))) (set masked_old (& (var old) (~ (bv 16 0x3)))) (set res (| (var masked_old) (bv 16 0xf))) (storew 0 (var addr) (var res)) (set e false) (set z (ite (is_zero (var res)) true false)) (set v false) (set c false) (set n (msb (cast 16 false (var res)))))
+pc_write(old: 0x0, new: 0x4)
+mem_read(addr: 0xfd18, value: 0xcdab)
+mem_write(addr: 0xfd18, old: 0xcdab, new: 0xcdaf)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: v, old: 0x0, new: 0x0)
+var_write(name: c, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x1)
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fd18  afcd                                     ..
+ e: false
+0x00000004 [1a0c0f03] bfldh 0xfd18, #0x03, #0x0f
+(seq (set addr (cast 32 false (bv 16 0xfd18))) (set old (loadw 0 16 (var addr))) (set masked_old (& (var old) (~ (bv 16 0x300)))) (set res (| (var masked_old) (bv 16 0xf00))) (storew 0 (var addr) (var res)) (set e false) (set z (ite (is_zero (var res)) true false)) (set v false) (set c false) (set n (msb (cast 16 false (var res)))))
+pc_write(old: 0x4, new: 0x8)
+mem_read(addr: 0xfd18, value: 0xcdaf)
+mem_write(addr: 0xfd18, old: 0xcdaf, new: 0xcfaf)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: v, old: 0x0, new: 0x0)
+var_write(name: c, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x1)
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fd18  afcf                                     ..
+ e: false
+EOF
+RUN
+
+NAME=Try testing real dump
+FILE=bins/c166/Lifan_X50_CVT_Bosch_M7.8.8_F01R00DP24_BSL_Combiloader.bin
+TIMEOUT=30
+BROKEN=1
+CMDS=<<EOF
+e asm.cpu=c166-generic
+e io.cache=1
+aaa
+aezi
+aezvt
+aezsu 0x00c0146e
+echo =======
+EOF
+EXPECT=<<EOF
+variable type value      
+-------------------------
+PC       bitv 0x00000000
+BUSCON0  bitv 0x0680
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
+CSP      bitv 0x08
+DPP0     bitv 0x000
+DPP1     bitv 0x001
+DPP2     bitv 0x002
+DPP3     bitv 0x003
+FOCON    bitv 0x0000
+P8       bitv 0x0000
+PLLCON   bitv 0x0000
+PSW      bitv 0x0000
+SGTDIS   bool false
+SP       bitv 0xfc00
+SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
+c        bool false
+e        bool false
+n        bool false
+r0       bitv 0xfc00
+r1       bitv 0xfc00
+r10      bitv 0x0000
+r11      bitv 0x0000
+r12      bitv 0x0000
+r13      bitv 0x0000
+r14      bitv 0x0000
+r15      bitv 0x0000
+r2       bitv 0xfa00
+r3       bitv 0xfc00
+r4       bitv 0x0000
+r5       bitv 0x0000
+r6       bitv 0x0000
+r7       bitv 0x0000
+r8       bitv 0x0000
+r9       bitv 0x0000
+usr0     bool false
+usr1     bool false
+v        bool false
+z        bool false
+
+=======
+EOF
+RUN
