@@ -182,8 +182,6 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 bool linux_select(RzDebug *dbg, int pid, int tid);
 RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid);
 RzDebugPid *fill_pid_info(const char *info, const char *path, int tid);
-int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size);
-int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size);
 RzList /*<RzDebugDesc *>*/ *linux_desc_list(int pid);
 bool linux_stop_threads(RzDebug *dbg, int except);
 int linux_handle_signals(RzDebug *dbg, int tid);
