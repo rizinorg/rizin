@@ -983,3 +983,20 @@ EXPECT=<<EOF
             0x00001024      jmp   qword [reloc._Exit]                  ; [0x3ff8:8]=0x4008 reloc.target._Exit
 EOF
 RUN
+
+NAME=asm.nodup flushes trailing duplicate run
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.lines=false
+e asm.bytes=false
+e asm.nodup=true
+wx 90909090
+pd 4
+EOF
+EXPECT=<<EOF
+0x00000000      nop
+...dup (3)
+EOF
+RUN

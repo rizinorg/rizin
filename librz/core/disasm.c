@@ -5917,6 +5917,10 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 			inc = RZ_MIN((st64)inc + ds->asmop.payload + pad, ST32_MAX);
 		}
 	}
+	if (ds->prev_ins_eq) {
+		rz_cons_printf(ds->core->cons, "dup (%d)\n", ds->prev_ins_count);
+		ds->prev_ins_eq = false;
+	}
 	rz_analysis_op_fini(&ds->analysis_op);
 
 	rz_interrupt_break_pop(core->intr);
