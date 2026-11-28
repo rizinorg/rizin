@@ -395,3 +395,13 @@ os       darwin
 subsys   visionOS
 EOF
 RUN
+
+NAME=mach0: second LC_DYSYMTAB with an oversized nindirectsyms
+FILE=bins/fuzzed/corrupt_macho_nindirectsyms
+CMDS=<<EOF
+isq
+EOF
+EXPECT=<<EOF
+0xac08ae06aa072310 0 imp.entry11
+EOF
+RUN
