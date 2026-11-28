@@ -4264,6 +4264,14 @@ static const RzCmdDescHelp recover_all_golang_functions_strings_help = {
 	.args = recover_all_golang_functions_strings_args,
 };
 
+static const RzCmdDescArg recover_all_rust_metadata_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp recover_all_rust_metadata_help = {
+	.summary = "Recover Rust strings, panic locations, crates, and user main",
+	.args = recover_all_rust_metadata_args,
+};
+
 static const RzCmdDescArg analyze_all_objc_references_args[] = {
 	{ 0 },
 };
@@ -23193,6 +23201,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(aal_cd);
 	RzCmdDesc *recover_all_golang_functions_strings_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalg", rz_recover_all_golang_functions_strings_handler, &recover_all_golang_functions_strings_help);
 	rz_warn_if_fail(recover_all_golang_functions_strings_cd);
+
+	RzCmdDesc *recover_all_rust_metadata_cd = rz_cmd_desc_argv_state_new(core->rcmd, aal_cd, "aalr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_recover_all_rust_metadata_handler, &recover_all_rust_metadata_help);
+	rz_warn_if_fail(recover_all_rust_metadata_cd);
 
 	RzCmdDesc *analyze_all_objc_references_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalor", rz_analyze_all_objc_references_handler, &analyze_all_objc_references_help);
 	rz_warn_if_fail(analyze_all_objc_references_cd);

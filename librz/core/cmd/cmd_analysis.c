@@ -6131,6 +6131,101 @@ RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core,
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_recover_all_rust_metadata_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzCoreRustInfo *info = rz_core_analysis_recover_rust_metadata(core);
+	if (!info) {
+		RZ_LOG_ERROR("cannot recover rust metadata.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	void **it;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = state->d.pj;
+		pj_o(pj);
+		if (info->main_addr != UT64_MAX) {
+			pj_kn(pj, "main", info->main_addr);
+		} else {
+			pj_knull(pj, "main");
+		}
+		if (info->lang_start_addr != UT64_MAX) {
+			pj_kn(pj, "lang_start", info->lang_start_addr);
+		} else {
+			pj_knull(pj, "lang_start");
+		}
+		pj_kn(pj, "strings_recovered", info->strings_recovered);
+		pj_kn(pj, "data_strings_recovered", info->data_strings_recovered);
+		pj_kn(pj, "code_strings_recovered", info->code_strings_recovered);
+		pj_kn(pj, "panic_locations", rz_pvector_len(info->panic_locs));
+		pj_ka(pj, "crates");
+		rz_pvector_foreach (info->crates, it) {
+			pj_s(pj, *it);
+		}
+		pj_end(pj);
+		pj_ka(pj, "user_files");
+		rz_pvector_foreach (info->user_files, it) {
+			pj_s(pj, *it);
+		}
+		pj_end(pj);
+		pj_ka(pj, "source_files");
+		rz_pvector_foreach (info->source_files, it) {
+			pj_s(pj, *it);
+		}
+		pj_end(pj);
+		pj_ka(pj, "locations");
+		rz_pvector_foreach (info->panic_locs, it) {
+			RzCoreRustPanicLoc *loc = *it;
+			pj_o(pj);
+			pj_kn(pj, "addr", loc->addr);
+			pj_kn(pj, "file_addr", loc->file_addr);
+			pj_ks(pj, "file", loc->file);
+			if (loc->crate_name) {
+				pj_ks(pj, "crate", loc->crate_name);
+			} else {
+				pj_knull(pj, "crate");
+			}
+			pj_kn(pj, "line", loc->line);
+			pj_kn(pj, "col", loc->col);
+			pj_kb(pj, "user_code", loc->is_user_code);
+			pj_end(pj);
+		}
+		pj_end(pj);
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_printf(core->cons, "strings: %u (data: %u, code: %u)\n",
+			info->strings_recovered, info->data_strings_recovered, info->code_strings_recovered);
+		rz_cons_printf(core->cons, "panic_locations: %" PFMTSZu " (source_files: %" PFMTSZu ", user_files: %" PFMTSZu ", crates: %" PFMTSZu ")\n",
+			rz_pvector_len(info->panic_locs), rz_pvector_len(info->source_files),
+			rz_pvector_len(info->user_files), rz_pvector_len(info->crates));
+		if (info->main_addr != UT64_MAX) {
+			rz_cons_printf(core->cons, "main: 0x%" PFMT64x " (sym.rust.main)\n", info->main_addr);
+		}
+		if (!rz_pvector_empty(info->user_files)) {
+			rz_cons_println(core->cons, "user_files:");
+			rz_pvector_foreach (info->user_files, it) {
+				rz_cons_printf(core->cons, "  %s\n", (const char *)*it);
+			}
+		}
+		if (!rz_pvector_empty(info->crates)) {
+			rz_cons_println(core->cons, "crates:");
+			rz_pvector_foreach (info->crates, it) {
+				rz_cons_printf(core->cons, "  %s\n", (const char *)*it);
+			}
+		}
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		rz_core_rust_info_free(info);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_core_rust_info_free(info);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_analyze_all_objc_references_handler(RzCore *core, int argc, const char **argv) {
 	return bool2status(rz_core_analysis_objc_refs(core, false));
 }

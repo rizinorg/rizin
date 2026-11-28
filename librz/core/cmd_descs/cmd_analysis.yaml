@@ -102,6 +102,14 @@ commands:
             summary: Recover and analyze all Golang functions and strings
             cname: recover_all_golang_functions_strings
             args: []
+          - name: aalr
+            summary: Recover Rust strings, panic locations, crates, and user main
+            cname: recover_all_rust_metadata
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
           - name: aalor
             summary: Analyze all Objective-C references from selector usages to their implementations
             cname: analyze_all_objc_references

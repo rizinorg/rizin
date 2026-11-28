@@ -57,6 +57,7 @@ if get_option('enable_tests')
     'core_bin',
     'core_cmd',
     'core_plugin',
+    'core_rust',
     'core_seek',
     'core_task',
     'crypto',

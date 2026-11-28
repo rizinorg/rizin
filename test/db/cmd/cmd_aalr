@@ -1,0 +1,155 @@
+NAME=aalr stripped Rust ELF64 strings, panic locations, and crates
+FILE=bins/elf/rust_stripped
+CMDS=<<EOF
+aalr
+fl~alpha_greeting
+fl~beta_greeting
+fl~explicit_panic
+fl~rust_utf8
+aalrj~src/rust_stripped.rs~?
+EOF
+EXPECT=<<EOF
+strings: 222 (data: 132, code: 90)
+panic_locations: 230 (source_files: 62, user_files: 1, crates: 4)
+user_files:
+  src/rust_stripped.rs
+crates:
+  addr2line-0.25.0
+  gimli-0.32.0
+  miniz_oxide-0.8.9
+  rustc-demangle-0.1.26
+0x00007047 18 str.alpha_greeting_str
+0x00007036 17 str.beta_greeting_str
+0x00007020 22 str.explicit_panic_trigger
+0x000063f8 15 str.rust_utf8_caf
+1
+EOF
+RUN
+
+NAME=aalr stripped Rust PE64 with analyzed functions
+FILE=bins/pe/rust_stripped.exe
+CMDS=<<EOF
+aa
+aalr
+fl~alpha_greeting
+fl~beta_greeting
+fl~explicit_panic
+fl~rust_utf8
+EOF
+EXPECT=<<EOF
+strings: 177 (data: 122, code: 55)
+panic_locations: 190 (source_files: 59, user_files: 1, crates: 4)
+user_files:
+  src/rust_stripped.rs
+crates:
+  addr2line-0.25.0
+  gimli-0.32.0
+  object-0.37.3
+  rustc-demangle-0.1.26
+0x140036a09 18 str.alpha_greeting_str
+0x1400369f8 17 str.beta_greeting_str
+0x140036940 22 str.explicit_panic_trigger
+0x1400368d0 15 str.rust_utf8_caf
+EOF
+RUN
+
+NAME=aalr ARM64 Rust ELF64 main and panic recovery
+FILE=bins/elf/rust_any_arm
+CMDS=<<EOF
+aalr
+fl~sym.rust.
+aalrj~"main":33252~?
+EOF
+EXPECT=<<EOF
+strings: 142 (data: 54, code: 88)
+panic_locations: 207 (source_files: 49, user_files: 0, crates: 4)
+main: 0x81e4 (sym.rust.main)
+crates:
+  addr2line-0.25.1
+  gimli-0.32.3
+  miniz_oxide-0.8.9
+  rustc-demangle-0.1.27
+0x000081e4 1 sym.rust.main
+0x000224c4 1 sym.rust.lang_start
+1
+EOF
+RUN
+
+NAME=aalr x86-64 PIE Rust ELF64 main via GOT lang_start_internal
+FILE=bins/elf/rust_any
+CMDS=<<EOF
+aalr
+fl~sym.rust.
+EOF
+EXPECT=<<EOF
+strings: 164 (data: 53, code: 111)
+panic_locations: 211 (source_files: 48, user_files: 0, crates: 4)
+main: 0x13ad0 (sym.rust.main)
+crates:
+  addr2line-0.25.1
+  gimli-0.32.3
+  miniz_oxide-0.8.9
+  rustc-demangle-0.1.27
+0x00013ad0 1 sym.rust.main
+0x000388e0 1 sym.rust.lang_start
+EOF
+RUN
+
+NAME=aalr x86-64 Rust ELF64 analyzed functions and main recovery
+FILE=bins/elf/analysis/rust_full
+CMDS=<<EOF
+aa
+aalr~strings:,panic_locations:,main:
+fl~sym.rust.
+EOF
+EXPECT=<<EOF
+strings: 192 (data: 123, code: 69)
+panic_locations: 123 (source_files: 34, user_files: 34, crates: 0)
+main: 0x41d0 (sym.rust.main)
+0x00004110 1 sym.rust.lang_start
+0x000041d0 1 sym.rust.main
+EOF
+RUN
+
+NAME=aalr x86-64 MinGW Rust PE64 main recovery past __main
+FILE=bins/pe/rust_any.exe
+CMDS=<<EOF
+aalr
+fl~sym.rust.
+EOF
+EXPECT=<<EOF
+strings: 704 (data: 157, code: 547)
+panic_locations: 418 (source_files: 110, user_files: 0, crates: 5)
+main: 0x140001550 (sym.rust.main)
+crates:
+  addr2line-0.25.1
+  gimli-0.32.3
+  memchr-2.7.6
+  object-0.37.3
+  rustc-demangle-0.1.27
+0x140001550 1 sym.rust.main
+0x1400366e0 1 sym.rust.lang_start
+EOF
+RUN
+
+NAME=aalr non-Rust ELF64 returns empty metadata
+FILE=bins/elf/struct_sample
+CMDS=<<EOF
+aalr
+aalrj
+EOF
+EXPECT=<<EOF
+strings: 0 (data: 0, code: 0)
+panic_locations: 0 (source_files: 0, user_files: 0, crates: 0)
+{"main":null,"lang_start":null,"strings_recovered":0,"data_strings_recovered":0,"code_strings_recovered":0,"panic_locations":0,"crates":[],"user_files":[],"source_files":[],"locations":[]}
+EOF
+RUN
+
+NAME=aalr without loaded binary reports error
+FILE=--
+CMDS=aalr
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: cannot recover rust metadata.
+EOF
+RUN

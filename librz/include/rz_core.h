@@ -840,6 +840,38 @@ RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
 RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core);
 RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core);
 RZ_API void rz_core_analysis_resolve_golang_fcn_strings(RzCore *core, RzAnalysisFunction *fcn);
+
+/**
+ * \brief Recovered Rust core::panic::Location entry.
+ */
+typedef struct rz_core_rust_panic_loc_t {
+	ut64 addr; ///< Virtual address of the Location struct
+	ut64 file_addr; ///< Virtual address of the file path string
+	char *file; ///< Source file path string
+	char *crate_name; ///< Cargo crate name if inside registry/src, else NULL
+	ut32 line; ///< Source line number
+	ut32 col; ///< Source column number
+	bool is_user_code; ///< True when not stdlib/rustc or Cargo dependency
+} RzCoreRustPanicLoc;
+
+/**
+ * \brief Aggregated Rust metadata recovered by `aalr`.
+ */
+typedef struct rz_core_rust_info_t {
+	ut64 main_addr; ///< Recovered user main address (`UT64_MAX` if not found)
+	ut64 lang_start_addr; ///< Recovered `std::rt::lang_start` address (`UT64_MAX` if not found)
+	ut32 strings_recovered; ///< Total Rust `&str` and `.rs` strings registered
+	ut32 data_strings_recovered; ///< Strings recovered from static `(ptr, len)` pairs
+	ut32 code_strings_recovered; ///< Strings recovered from code `(ptr, len)` loads
+	RzPVector /*<RzCoreRustPanicLoc *>*/ *panic_locs; ///< Recovered panic::Location structs
+	RzPVector /*<char *>*/ *crates; ///< Deduplicated sorted Cargo crate names
+	RzPVector /*<char *>*/ *user_files; ///< Deduplicated sorted user `.rs` source paths
+	RzPVector /*<char *>*/ *source_files; ///< Deduplicated sorted all `.rs` source paths
+} RzCoreRustInfo;
+
+RZ_API void rz_core_rust_info_free(RZ_NULLABLE RzCoreRustInfo *info);
+RZ_API RZ_OWN RzCoreRustInfo *rz_core_analysis_recover_rust_metadata(RZ_NONNULL RzCore *core);
+RZ_API ut32 rz_core_analysis_resolve_rust_strings(RZ_NONNULL RzCore *core);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
