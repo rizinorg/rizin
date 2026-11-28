@@ -189,13 +189,30 @@ bool test_grep_json_path(void) {
 			"7\n",
 			"json path preserves literal open brace in key",
 		},
+		{
+			"{\"a\":1,\"b\":2}",
+			"{.missing}",
+			NULL,
+			"json path miss clears buffer instead of returning raw json",
+		},
+		{
+			"{\"ops\":[{\"offset\":1}]}",
+			"{.ops[]\\|{offset}}",
+			NULL,
+			"malformed json path projection clears buffer instead of returning raw json",
+		},
 	};
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
 		RzCons *cons = rz_cons_new();
 		rz_cons_print(cons, cases[i].json);
 		rz_cons_grep(cons, cases[i].grep);
-		mu_assert_streq(rz_cons_get_buffer(cons), cases[i].expected, cases[i].message);
+		if (cases[i].expected) {
+			mu_assert_streq(rz_cons_get_buffer(cons), cases[i].expected, cases[i].message);
+		} else {
+			mu_assert_null(rz_cons_get_buffer(cons), cases[i].message);
+			mu_assert_eq(rz_cons_get_buffer_len(cons), 0, cases[i].message);
+		}
 		rz_cons_free(cons);
 	}
 	mu_end;

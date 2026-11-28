@@ -176,7 +176,7 @@ static const char *help_detail_tilde[] = {
 	" {}", "", "json indentation",
 	" {}..", "", "less json indentation",
 	" {}...", "", "hud json indentation",
-	" {path}", "", "json path grep",
+	" {path}", "", "json path grep (e.g. {[0].key} or {.[]\\|{k1,k2}})",
 	"endmodifier:", "", "",
 	" $", "", "words must be placed at the end of line",
 	"column:", "", "",
@@ -653,9 +653,14 @@ RZ_API void rz_cons_grepbuf(RZ_NONNULL RZ_BORROW RzCons *cons) {
 				cons->context->buffer = out;
 				cons->context->buffer_len = strlen(out);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
-				grep->json = 0;
 				rz_cons_newline(cons);
+			} else {
+				cons->context->buffer_len = 0;
+				if (cons->context->buffer) {
+					cons->context->buffer[0] = '\0';
+				}
 			}
+			grep->json = 0;
 			RZ_FREE(grep->json_path);
 		} else {
 			const char *palette[] = {
