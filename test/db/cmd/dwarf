@@ -9708,3 +9708,21 @@ arg parse_buffer *input_buffer @ r8
 var size_t off @ r9
 EOF
 RUN
+
+NAME="Invalid location expression that leaves no value"
+FILE=bins/elf/dwarf/dwarf-invalid-expr-no-value-aarch64
+CMDS=<<EOF
+aaa
+afvll @ dbg._start
+EOF
+EXPECT=<<EOF
+var int32_t var_4h @ stack - 0x4
+var int on_stack origin=DWARF @ CFA-4
+var int32_t arg1 @ x0
+var int no_value origin=DWARF @ empty
+EOF
+EXPECT_ERR=<<EOF
+WARNING: DWARF expression in unit 0x0 yields no location, it is invalid or unsupported
+WARNING: DWARF expression in unit 0x0 yields no location, it is invalid or unsupported
+EOF
+RUN

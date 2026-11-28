@@ -753,3 +753,20 @@ EXPECT=<<EOF
 first
 EOF
 RUN
+
+NAME=f collision returns error and preserves existing flag comment
+FILE==
+CMDS=<<EOF
+f foo 0x10 first
+f bar 0x20 overwritten
+_sj
+fC foo
+EOF
+EXPECT=<<EOF
+{"error":{"code":"ERROR","message":"Command execution failed"}}
+first
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot create flag "bar" at 0x0 because there is already "foo" flag (use 'f+' to add another flag at the same offset)
+EOF
+RUN
