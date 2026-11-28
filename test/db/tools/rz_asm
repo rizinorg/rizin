@@ -617,6 +617,7 @@ EXPECT=<<EOF
 68030           Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
+68080           Apollo 68080: FPGA core with the 68060 ISA, Apollo extensions and AMMX
 cpu32           Motorola CPU32: 32-bit embedded-controller CPU core based on the 68020
 coldfire        Motorola ColdFire: 32-bit embedded-controller family based on the 68000 ISA
 cfv1            Motorola ColdFire V1 core

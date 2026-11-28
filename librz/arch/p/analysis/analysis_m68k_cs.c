@@ -1602,6 +1602,211 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	case M68K_INS_TRAPLE:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
+#ifdef RZ_CAPSTONE_HAS_M68K_MC68851
+	case M68K_INS_PVALID:
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
+	case M68K_INS_PFLUSHS:
+	case M68K_INS_PFLUSHR:
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		break;
+	case M68K_INS_PSAVE:
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
+	case M68K_INS_PRESTORE:
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case M68K_INS_PDBBS:
+	case M68K_INS_PDBBC:
+	case M68K_INS_PDBLS:
+	case M68K_INS_PDBLC:
+	case M68K_INS_PDBSS:
+	case M68K_INS_PDBSC:
+	case M68K_INS_PDBAS:
+	case M68K_INS_PDBAC:
+	case M68K_INS_PDBWS:
+	case M68K_INS_PDBWC:
+	case M68K_INS_PDBIS:
+	case M68K_INS_PDBIC:
+	case M68K_INS_PDBGS:
+	case M68K_INS_PDBGC:
+	case M68K_INS_PDBCS:
+	case M68K_INS_PDBCC:
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 1);
+		break;
+	case M68K_INS_PSBS:
+	case M68K_INS_PSBC:
+	case M68K_INS_PSLS:
+	case M68K_INS_PSLC:
+	case M68K_INS_PSSS:
+	case M68K_INS_PSSC:
+	case M68K_INS_PSAS:
+	case M68K_INS_PSAC:
+	case M68K_INS_PSWS:
+	case M68K_INS_PSWC:
+	case M68K_INS_PSIS:
+	case M68K_INS_PSIC:
+	case M68K_INS_PSGS:
+	case M68K_INS_PSGC:
+	case M68K_INS_PSCS:
+	case M68K_INS_PSCC:
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
+		break;
+	case M68K_INS_PTRAPBS:
+	case M68K_INS_PTRAPBC:
+	case M68K_INS_PTRAPLS:
+	case M68K_INS_PTRAPLC:
+	case M68K_INS_PTRAPSS:
+	case M68K_INS_PTRAPSC:
+	case M68K_INS_PTRAPAS:
+	case M68K_INS_PTRAPAC:
+	case M68K_INS_PTRAPWS:
+	case M68K_INS_PTRAPWC:
+	case M68K_INS_PTRAPIS:
+	case M68K_INS_PTRAPIC:
+	case M68K_INS_PTRAPGS:
+	case M68K_INS_PTRAPGC:
+	case M68K_INS_PTRAPCS:
+	case M68K_INS_PTRAPCC:
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+#endif
+#ifdef RZ_CAPSTONE_HAS_M68K_080
+	case M68K_INS_ADDIW:
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case M68K_INS_CMPIW:
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
+	case M68K_INS_MOVIW:
+	case M68K_INS_MOVE2:
+	case M68K_INS_MOVEX:
+	case M68K_INS_MOVEH:
+		m68k_set_move_type(op, m68k);
+		break;
+	case M68K_INS_MOVZ2:
+	case M68K_INS_EXTUB:
+	case M68K_INS_EXTUW:
+		op->sign = false;
+		m68k_set_cast_type(op, m68k);
+		break;
+	case M68K_INS_PERM:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break;
+	case M68K_INS_TOUCH:
+		op->type = RZ_ANALYSIS_OP_TYPE_SYNC;
+		break;
+	case M68K_INS_BANK:
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		break;
+	case M68K_INS_FMOVERZ:
+	case M68K_INS_FMOVEURZ:
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		m68k_set_cast_type(op, m68k);
+		break;
+	case M68K_INS_LOAD:
+	case M68K_INS_LOADI:
+	case M68K_INS_STORE:
+	case M68K_INS_STOREI:
+	case M68K_INS_STOREC:
+	case M68K_INS_STOREM:
+	case M68K_INS_STOREILM:
+	case M68K_INS_STOREM3:
+	case M68K_INS_C2P:
+	case M68K_INS_TRANSHI:
+	case M68K_INS_TRANSLO:
+	case M68K_INS_VPERM:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		m68k_set_move_type(op, m68k);
+		break;
+	case M68K_INS_PACKUSWB:
+	case M68K_INS_PACK3216:
+	case M68K_INS_UNPACK1632:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case M68K_INS_PAND:
+	case M68K_INS_PANDN:
+	case M68K_INS_MINTERM:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		break;
+	case M68K_INS_POR:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		break;
+	case M68K_INS_PEOR:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
+		break;
+	case M68K_INS_PAVGB:
+	case M68K_INS_PADDB:
+	case M68K_INS_PADDW:
+	case M68K_INS_PADDUSB:
+	case M68K_INS_PADDUSW:
+	case M68K_INS_BFLYB:
+	case M68K_INS_BFLYW:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case M68K_INS_PSUBB:
+	case M68K_INS_PSUBW:
+	case M68K_INS_PSUBUSB:
+	case M68K_INS_PSUBUSW:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		break;
+	case M68K_INS_PMUL88:
+	case M68K_INS_PMULA:
+	case M68K_INS_PMULH:
+	case M68K_INS_PMULL:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
+	case M68K_INS_PCMPEQB:
+	case M68K_INS_PCMPEQW:
+	case M68K_INS_PCMPHIB:
+	case M68K_INS_PCMPHIW:
+	case M68K_INS_PCMPGEB:
+	case M68K_INS_PCMPGEW:
+	case M68K_INS_PCMPGTB:
+	case M68K_INS_PCMPGTW:
+	case M68K_INS_PMINSB:
+	case M68K_INS_PMINSW:
+	case M68K_INS_PMINUB:
+	case M68K_INS_PMINUW:
+	case M68K_INS_PMAXSB:
+	case M68K_INS_PMAXSW:
+	case M68K_INS_PMAXUB:
+	case M68K_INS_PMAXUW:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
+	case M68K_INS_BSEL:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
+		break;
+	case M68K_INS_LSLQ:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
+		break;
+	case M68K_INS_LSRQ:
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
+		break;
+	case M68K_INS_TEX:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case M68K_INS_REX:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
+#endif
 	case M68K_INS_TST:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;

@@ -273,6 +273,41 @@ if has_capstone_m68k_fp_formats
   add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_FP_FORMATS'], language: 'c')
 endif
 
+has_capstone_m68k_mc68851 = cc.compiles('''
+#include <capstone/capstone.h>
+#include <capstone/m68k.h>
+int main(void) {
+	m68k_insn insn = M68K_INS_PVALID;
+	m68k_reg reg = M68K_REG_DRP;
+	return insn == 0 && reg == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K MC68851 PMMU instructions'
+)
+if has_capstone_m68k_mc68851
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_MC68851'], language: 'c')
+endif
+
+has_capstone_m68k_080 = cc.compiles('''
+#include <capstone/capstone.h>
+#include <capstone/m68k.h>
+int main(void) {
+	cs_mode mode = CS_MODE_M68K_080;
+	m68k_insn insn = M68K_INS_PADDW;
+	m68k_reg reg = M68K_REG_E23;
+	return mode == 0 && insn == 0 && reg == 0;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has the M68K Apollo 68080 mode'
+)
+if has_capstone_m68k_080
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_080'], language: 'c')
+endif
+
 # Handle PCRE2
 cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
 pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() not in ['darwin', 'serenity']
