@@ -11,7 +11,6 @@ EOF
 RUN
 
 NAME=#! with ext != name
-BROKEN=1
 FILE==
 CMDS=<<EOF
 . scripts/set-LD_PRELOAD.rz
