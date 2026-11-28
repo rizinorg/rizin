@@ -1,0 +1,455 @@
+# This file holds all tests about finding function control flow graphs (CFGs) within
+# the inter-procedural CFG (iCFG).
+#
+# The conflict to solve is: whether a basic block, reachable from more than one
+# entry point, is shared between these entry points (is shared by multiple functions).
+# Or if it is an entry point of a new function.
+# The latter case happens if a function entry point is a tail called function.
+#
+# Especially for stripped or obfuscated binaries this distinction (shared vs. entry-point block)
+# is not clear. Because the binary might not give enough information for a
+# clear answer. Instead, we try to be "close-enough" to the truth.
+# For that reason you also find tests which are false-positives below.
+# Meaning: They give the wrong classification, if you know the source code
+# of the binary, but reasonable according to our algorithm.
+# Adversarial examples if you like so.
+
+# The function epilog is shared by both functions
+NAME=Shared epilog
+FILE=bins/inquiry/icfg_conflicts/shared_epilog_fallthru.s.obj
+CMDS=<<EOF
+is
+echo ""
+aIa
+pdf @ fcn_1
+echo ""
+pdf @ fcn_2
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type   size lib name           
+----------------------------------------------------------------
+  1 0x00000054 0x08000054 LOCAL  NOTYPE    0     epilogue_start
+  2 0x00000040 0x08000040 GLOBAL FUNC      0     fcn_1
+  3 0x0000004b 0x0800004b GLOBAL FUNC      0     fcn_2
+
+            ;-- section..text:
+/ sym.fcn_1();
+|           0x08000040      push  rbp                                  ; [02] -r-x section size 22 named .text
+|           0x08000041      mov   rbp, rsp
+|           0x08000044      mov   eax, 0x01
+|       ,=< 0x08000049      jmp   loc.epilogue_start
+..
+|       |   ; CODE XREF from sym.fcn_1 @ 0x8000049
+|       |   ;-- epilogue_start:
+|       `-> 0x08000054      pop   rbp
+\           0x08000055      ret
+
+/ sym.fcn_2();
+|           0x0800004b      push  rbp
+|           0x0800004c      mov   rbp, rsp
+|           0x0800004f      mov   eax, 0x02
+|           ; CODE XREF from sym.fcn_1 @ 0x8000049
+|           ;-- epilogue_start:
+|           0x08000054      pop   rbp
+\           0x08000055      ret
+
+     addr size traced ninstr jump       fail fcns                   calls xrefs       
+--------------------------------------------------------------------------------------
+0x8000040   11      0      4 0x08000054       0x08000040                  
+0x800004b    9      0      3                  0x0800004b                  
+0x8000054    2      0      2                  0x08000040 0x0800004b        0x08000049
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Simple jumps tail-call a function symbol
+FILE=bins/inquiry/icfg_conflicts/tailcalled_with_cfg.s.obj
+CMDS=<<EOF
+is
+echo ""
+aIa
+pd 11
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type   size lib name   
+--------------------------------------------------------
+  1 0x0000004e 0x0800004e LOCAL  FUNC      0     fcn_tc
+  2 0x00000054 0x08000054 LOCAL  NOTYPE    0     tc.a
+  3 0x0000005b 0x0800005b LOCAL  NOTYPE    0     tc.b
+  4 0x00000060 0x08000060 LOCAL  NOTYPE    0     tc.ret
+  5 0x00000040 0x08000040 GLOBAL FUNC      0     fcn_1
+  6 0x00000047 0x08000047 GLOBAL FUNC      0     fcn_2
+
+            ;-- section..text:
+/ sym.fcn_1();
+|           0x08000040      mov   edi, 0x00                            ; [02] -r-x section size 33 named .text
+\       ,=< 0x08000045      jmp   sym.fcn_tc
+/ sym.fcn_2();
+|       |   0x08000047      mov   edi, 0x01
+\      ,==< 0x0800004c      jmp   sym.fcn_tc
+       ||   ; CALL XREF from sym.fcn_1 @ 0x8000045
+       ||   ; CALL XREF from sym.fcn_2 @ 0x800004c
+/ sym.fcn_tc();
+|      ``-> 0x0800004e      test  edi, edi
+|       ,=< 0x08000050      jz    loc.tc.a
+|      ,==< 0x08000052      jmp   loc.tc.b
+|      ||   ; CODE XREF from sym.fcn_tc @ 0x8000050
+|      ||   ;-- tc.a:
+|      |`-> 0x08000054      mov   eax, 0x01
+|      |,=< 0x08000059      jmp   loc.tc.ret
+|      ||   ; CODE XREF from sym.fcn_tc @ 0x8000052
+|      ||   ;-- tc.b:
+|      `--> 0x0800005b      mov   eax, 0x02
+|       |   ; CODE XREF from sym.fcn_tc @ 0x8000059
+|       |   ;-- tc.ret:
+\       `-> 0x08000060      ret
+
+     addr size traced ninstr jump       fail fcns        calls       xrefs                  
+--------------------------------------------------------------------------------------------
+0x8000040    7      0      2                  0x08000040  0x0800004e 
+0x8000047    7      0      2                  0x08000047  0x0800004e 
+0x800004e    4      0      2 0x08000054       0x0800004e              0x08000045 0x0800004c
+0x8000052    2      0      1 0x0800005b       0x0800004e             
+0x8000054    7      0      2 0x08000060       0x0800004e              0x08000050
+0x800005b    5      0      1                  0x0800004e              0x08000052
+0x8000060    1      0      1                  0x0800004e              0x08000059
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN
+
+# This test will change once we solve tail call detection for entry popints
+# with a single membership.
+# Here the fcn_tc label should be an entry point (it is called by fcn_0),
+# but isn't because it has only the membership of fcn_1.
+NAME=Tail-called function with shared block (incomplete).
+FILE=bins/inquiry/icfg_conflicts/tailcalled_contains_shared.s.obj
+CMDS=<<EOF
+is
+echo ""
+aIa
+pd 13
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type   size lib name         
+--------------------------------------------------------------
+  1 0x00000056 0x08000056 LOCAL  NOTYPE    0     fcn_tc
+  2 0x0000005b 0x0800005b LOCAL  NOTYPE    0     shared_block
+  3 0x00000040 0x08000040 GLOBAL FUNC      0     fcn_0
+  4 0x0000004a 0x0800004a GLOBAL FUNC      0     fcn_1
+  5 0x00000050 0x08000050 GLOBAL FUNC      0     fcn_2
+
+            ;-- section..text:
+/ sym.fcn_0();
+|           0x08000040      push  rbp                                  ; [02] -r-x section size 29 named .text
+|           0x08000041      mov   rbp, rsp
+|           0x08000044      call  loc.fcn_tc                           ; sym.fcn_1+0xc
+\           0x08000049      ret
+/ sym.fcn_1();
+|           0x0800004a      push  rbp
+|           0x0800004b      mov   rbp, rsp
+|       ,=< 0x0800004e      jmp   loc.fcn_tc
+/ sym.fcn_2();
+|       |   0x08000050      push  rbp
+|       |   0x08000051      mov   rbp, rsp
+|      ,==< 0x08000054      jmp   loc.shared_block
+|      ||   ; CODE XREF from sym.fcn_1 @ 0x800004e
+|      ||   ;-- fcn_tc:
+|      |`-> 0x08000056      mov   eax, 0x01
+|      |    ; CODE XREF from sym.fcn_2 @ 0x8000054
+|      |    ;-- shared_block:
+|      `--> 0x0800005b      pop   rbp
+\           0x0800005c      ret
+
+     addr size traced ninstr jump       fail fcns                   calls       xrefs       
+--------------------------------------------------------------------------------------------
+0x8000040    9      0      3                  0x08000040             0x08000056 
+0x8000049    1      0      1                  0x08000040                        
+0x800004a    6      0      3 0x08000056       0x0800004a                        
+0x8000050    6      0      3 0x0800005b       0x08000050                        
+0x8000056    5      0      1                  0x0800004a                         0x0800004e
+0x800005b    2      0      2                  0x0800004a 0x08000050              0x08000054
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN
+
+# Very similar to the test above.
+# But this one is correctly solved now, because the tail called
+# function is correctly identified, because of multiple memberships
+# and an function symbol
+NAME=Tail-called function with shared block (complete).
+FILE=bins/inquiry/icfg_conflicts/tailcalled_with_shared_cfg.s.obj
+CMDS=<<EOF
+is
+echo ""
+aIa
+pd 10
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type   size lib name   
+--------------------------------------------------------
+  1 0x00000059 0x08000059 LOCAL  NOTYPE    0     tc.b
+  2 0x00000052 0x08000052 LOCAL  NOTYPE    0     tc.a
+  3 0x0000005e 0x0800005e LOCAL  NOTYPE    0     tc.ret
+  4 0x00000040 0x08000040 GLOBAL FUNC      0     fcn_1
+  5 0x00000045 0x08000045 GLOBAL FUNC      0     fcn_2
+  6 0x0000004a 0x0800004a GLOBAL FUNC      0     fcn_3
+  7 0x0000004c 0x0800004c GLOBAL FUNC      0     fcn_tc
+
+            ;-- section..text:
+/ sym.fcn_1();
+\       ,=< 0x08000040      jmp   sym.fcn_tc                           ; RELOC 32 fcn_tc @ 0x0800004c - 0x8000045 ; [02] -r-x section size 31 named .text
+/ sym.fcn_2();
+\      ,==< 0x08000045      jmp   sym.fcn_tc                           ; RELOC 32 fcn_tc @ 0x0800004c - 0x800004a
+/ sym.fcn_3();
+|     ,===< 0x0800004a      jmp   loc.tc.b
+      |||   ; CALL XREF from sym.fcn_1 @ 0x8000040
+      |||   ; CALL XREF from sym.fcn_2 @ 0x8000045
+      |||   ;-- fcn_tc:
+/ sym.fcn_tc();
+|     |``-> 0x0800004c      test  edi, edi                             ; RELOC TARGET 32 fcn_tc @ 0x0800004c - 0x800004a
+|     | ,=< 0x0800004e      jz    loc.tc.a
+|     |,==< 0x08000050      jmp   loc.tc.b
+|     |||   ; CODE XREF from sym.fcn_tc @ 0x800004e
+|     |||   ;-- tc.a:
+|     ||`-> 0x08000052      mov   eax, 0x01
+|     ||,=< 0x08000057      jmp   loc.tc.ret
+|     |||   ; CODE XREF from sym.fcn_3 @ 0x800004a
+|     |||   ; CODE XREF from sym.fcn_tc @ 0x8000050
+|     |||   ;-- tc.b:
+|     ``--> 0x08000059      mov   eax, 0x02
+|       |   ; CODE XREF from sym.fcn_tc @ 0x8000057
+|       |   ;-- tc.ret:
+\       `-> 0x0800005e      ret
+
+     addr size traced ninstr jump       fail fcns                   calls       xrefs                  
+-------------------------------------------------------------------------------------------------------
+0x8000040    5      0      1                  0x08000040             0x0800004c 
+0x8000045    5      0      1                  0x08000045             0x0800004c 
+0x800004a    2      0      1 0x08000059       0x0800004a                        
+0x800004c    4      0      2 0x08000052       0x0800004c                         0x08000040 0x08000045
+0x8000050    2      0      1 0x08000059       0x0800004c                        
+0x8000052    7      0      2 0x0800005e       0x0800004c                         0x0800004e
+0x8000059    5      0      1                  0x0800004a 0x0800004c              0x0800004a 0x08000050
+0x800005e    1      0      1                  0x0800004a 0x0800004c              0x08000057
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN
+
+# Blocks which were detected by different interpreters differ in size.
+# This test checks if they are all resolved to the same
+# size, independently in which order they are detected.
+NAME=Test splitting of overlapping blocks
+FILE=bins/inquiry/icfg_conflicts/overlapping_blocks.s.obj
+CMDS=<<EOF
+e asm.comments=false
+aIa
+pd 7 @ loc.pattern_a
+pd 7 @ loc.pattern_b
+pd 7 @ loc.pattern_c
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- fcn_a1:
+/ loc.pattern_a();
+|       ,=< 0x08000100      jmp   loc.fcn_a4.b
+/ sym.fcn_a2();
+|      ,==< 0x08000102      jmp   loc.fcn_a4.a
+/ sym.fcn_a3();
+\     ,===< 0x08000104      jmp   sym.fcn_a4
+      |||   ;-- fcn_a4:
+/ sym.fcn_a4();
+|     `---> 0x08000109      mov   eax, 0x01
+|      ||   ;-- fcn_a4.a:
+|      `--> 0x0800010e      mov   ebx, 0x01
+|       |   ;-- fcn_a4.b:
+|       `-> 0x08000113      mov   ecx, 0x01
+\           0x08000118      ret
+            ;-- fcn_b1:
+/ loc.pattern_b();
+\       ,=< 0x08000200      jmp   sym.fcn_b4
+/ sym.fcn_b2();
+|      ,==< 0x08000205      jmp   loc.fcn_b4.a
+/ sym.fcn_b3();
+|     ,===< 0x08000207      jmp   loc.fcn_b4.b
+      |||   ;-- fcn_b4:
+/ sym.fcn_b4();
+|     ||`-> 0x08000209      mov   eax, 0x01
+|     ||    ;-- fcn_b4.a:
+|     |`--> 0x0800020e      mov   ebx, 0x01
+|     |     ;-- fcn_b4.b:
+|     `---> 0x08000213      mov   ecx, 0x01
+\           0x08000218      ret
+            ;-- fcn_c1:
+/ loc.pattern_c();
+|       ,=< 0x08000300      jmp   loc.fcn_c4.a
+/ sym.fcn_c2();
+\      ,==< 0x08000302      jmp   sym.fcn_c4
+/ sym.fcn_c3();
+|     ,===< 0x08000307      jmp   loc.fcn_c4.b
+      |||   ;-- fcn_c4:
+/ sym.fcn_c4();
+|     |`--> 0x08000309      mov   eax, 0x01
+|     | |   ;-- fcn_c4.a:
+|     | `-> 0x0800030e      mov   ebx, 0x01
+|     |     ;-- fcn_c4.b:
+|     `---> 0x08000313      mov   ecx, 0x01
+\           0x08000318      ret
+
+     addr size traced ninstr jump       fail fcns                              calls       xrefs       
+-------------------------------------------------------------------------------------------------------
+0x8000100    2      0      1 0x08000113       0x08000100                                   
+0x8000102    2      0      1 0x0800010e       0x08000102                                   
+0x8000104    5      0      1                  0x08000104                        0x08000109 
+0x8000109    5      0      1                  0x08000109                                    0x08000104
+0x800010e    5      0      1                  0x08000102 0x08000109                         0x08000102
+0x8000113    6      0      2                  0x08000100 0x08000102 0x08000109              0x08000100
+0x8000200    5      0      1                  0x08000200                        0x08000209 
+0x8000205    2      0      1 0x0800020e       0x08000205                                   
+0x8000207    2      0      1 0x08000213       0x08000207                                   
+0x8000209    5      0      1                  0x08000209                                    0x08000200
+0x800020e    5      0      1                  0x08000205 0x08000209                         0x08000205
+0x8000213    6      0      2                  0x08000205 0x08000207 0x08000209              0x08000207
+0x8000300    2      0      1 0x0800030e       0x08000300                                   
+0x8000302    5      0      1                  0x08000302                        0x08000309 
+0x8000307    2      0      1 0x08000313       0x08000307                                   
+0x8000309    5      0      1                  0x08000309                                    0x08000302
+0x800030e    5      0      1                  0x08000300 0x08000309                         0x08000300
+0x8000313    6      0      2                  0x08000300 0x08000307 0x08000309              0x08000307
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000300 from io.
+EOF
+RUN
+
+# This test doesn't succeed yet. Because the block at 0x0
+# has only a single incoming edge from one function and is
+# not added to the conflict list.
+NAME=Test dropping of block at 0x0
+FILE==
+ARGS=-a x86
+CMDS=<<EOF
+wx b801000000554889e5b802000000ebf0
+s 0x5
+aIf
+pd 5 @ 0
+ablt
+EOF
+EXPECT=<<EOF
+            0x00000000      mov   eax, 0x01
+/ inq.0x5();
+|           0x00000005      push  rbp
+|           0x00000006      mov   rbp, rsp
+|           0x00000009      mov   eax, 0x02
+\           0x0000000e      jmp   0x0
+addr size traced ninstr jump fail fcns        calls xrefs 
+----------------------------------------------------------
+ 0x5   11      0      4            0x00000005       
+EOF
+EXPECT_ERR=
+RUN
+
+# The binary contains symbols. So we would expect any of them to be their own,
+# two instruction long, function. This is because the function symbol heuristic
+# makes any function symbol location a unique function.
+NAME=Circular tail calls
+FILE=bins/inquiry/icfg_conflicts/circlular_tail_calls.s.obj
+CMDS=<<EOF
+is
+aIa
+pd 6
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type size lib name  
+-----------------------------------------------------
+  1 0x00000040 0x08000040 GLOBAL FUNC    0     fcn_a
+  2 0x0000004a 0x0800004a GLOBAL FUNC    0     fcn_b
+  3 0x00000054 0x08000054 GLOBAL FUNC    0     fcn_c
+            ; CALL XREF from sym.fcn_c @ 0x8000059
+            ;-- section..text:
+            ;-- fcn_a:
+/ sym.fcn_a();
+|       .-> 0x08000040      mov   eax, 0x01                            ; RELOC TARGET 32 fcn_a @ 0x08000040 - 0x800005e ; [02] -r-x section size 30 named .text
+\      ,==< 0x08000045      jmp   sym.fcn_b                            ; RELOC 32 fcn_b @ 0x0800004a - 0x800004a
+       |:   ; CALL XREF from sym.fcn_a @ 0x8000045
+       |:   ;-- fcn_b:
+/ sym.fcn_b();
+|      `--> 0x0800004a      mov   eax, 0x01                            ; RELOC TARGET 32 fcn_b @ 0x0800004a - 0x800004a
+\      ,==< 0x0800004f      jmp   sym.fcn_c                            ; RELOC 32 fcn_c @ 0x08000054 - 0x8000054
+       |:   ; CALL XREF from sym.fcn_b @ 0x800004f
+       |:   ;-- fcn_c:
+/ sym.fcn_c();
+|      `--> 0x08000054      mov   eax, 0x01                            ; RELOC TARGET 32 fcn_c @ 0x08000054 - 0x8000054
+\       `=< 0x08000059      jmp   sym.fcn_a                            ; RELOC 32 fcn_a @ 0x08000040 - 0x800005e
+     addr size traced ninstr jump fail fcns        calls       xrefs       
+---------------------------------------------------------------------------
+0x8000040   10      0      2            0x08000040  0x0800004a  0x08000059
+0x800004a   10      0      2            0x0800004a  0x08000054  0x08000045
+0x8000054   10      0      2            0x08000054  0x08000040  0x0800004f
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Tail calls into circular functions
+FILE=bins/inquiry/icfg_conflicts/circlular_tail_calls_with_entry.s.obj
+CMDS=<<EOF
+e asm.comments=false
+is
+aIa
+pd 9
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type size lib name   
+------------------------------------------------------
+  1 0x00000046 0x08000046 LOCAL  OBJ     0     loop_a
+  2 0x0000004d 0x0800004d LOCAL  OBJ     0     loop_b
+  3 0x00000054 0x08000054 LOCAL  OBJ     0     loop_c
+  4 0x00000040 0x08000040 GLOBAL FUNC    0     fcn_a
+  5 0x00000042 0x08000042 GLOBAL FUNC    0     fcn_b
+  6 0x00000044 0x08000044 GLOBAL FUNC    0     fcn_c
+            ;-- section..text:
+/ sym.fcn_a();
+|       ,=< 0x08000040      jmp   obj.loop_a
+/ sym.fcn_b();
+|      ,==< 0x08000042      jmp   obj.loop_b
+/ sym.fcn_c();
+|     ,===< 0x08000044      jmp   obj.loop_c
+|     |||   ;-- loop_a:
+|    .--`-> 0x08000046      mov   eax, 0x01
+|    :||,=< 0x0800004b      jmp   obj.loop_b
+|    :|||   ;-- loop_b:
+|    :|``-> 0x0800004d      mov   eax, 0x01
+|    :| ,=< 0x08000052      jmp   obj.loop_c
+|    :| |   ;-- loop_c:
+|    :`-`-> 0x08000054      mov   eax, 0x01
+\    `====< 0x08000059      jmp   obj.loop_a
+     addr size traced ninstr jump       fail fcns                              calls xrefs                  
+------------------------------------------------------------------------------------------------------------
+0x8000040    2      0      1 0x08000046       0x08000040                             
+0x8000042    2      0      1 0x0800004d       0x08000042                             
+0x8000044    2      0      1 0x08000054       0x08000044                             
+0x8000046    7      0      2                  0x08000040 0x08000042 0x08000044        0x08000040 0x08000059
+0x800004d    7      0      2                  0x08000040 0x08000042 0x08000044        0x08000042
+0x8000054    7      0      2 0x08000046       0x08000040 0x08000042 0x08000044        0x08000044
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN

@@ -1076,6 +1076,37 @@ RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state) {
 	free(state);
 }
 
+static void *Ht_(clone_iter_mut_state)(const void *state) {
+	HT_(IterMutState) *clone = RZ_NEW(HT_(IterMutState));
+	if (clone) {
+		memcpy(clone, state, sizeof(HT_(IterMutState)));
+	}
+	return clone;
+}
+
+static void *Ht_(clone_iter_state)(const void *state) {
+	HT_(IterState) *clone = RZ_NEW(HT_(IterState));
+	if (clone) {
+		memcpy(clone, state, sizeof(HT_(IterState)));
+	}
+	return clone;
+}
+
+static bool Ht_(reset_iter_mut_state)(void *state) {
+	HT_(IterMutState) *ht_state = state;
+	ht_state->ti = 0;
+	ht_state->kv = NULL;
+	return true;
+}
+
+static bool Ht_(reset_iter_state)(void *state) {
+	HT_(IterState) *ht_state = state;
+	ht_state->ti = 0;
+	ht_state->bi = 0;
+	ht_state->kv = NULL;
+	return true;
+}
+
 /**
  * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding mutable values.
  *
@@ -1092,7 +1123,7 @@ RZ_API bool Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIte
 		return false;
 	}
 
-	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state, iterator)) {
+	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), Ht_(clone_iter_mut_state), Ht_(reset_iter_mut_state), state, iterator)) {
 		Ht_(free_iter_mut_state)(state);
 		return false;
 	}
@@ -1116,7 +1147,7 @@ RZ_API bool Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzI
 	 * \note rz_iterator_is_uninit check here is currently unreachable given new_iter_state already guarantees state != NULL and iter_next is a fixed function pointer.
 	 * Left the guard in for robustness against future changes, happy to simplify to just return !rz_iterator_is_uninit(iter); if preferred.
 	 */
-	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state, iterator)) {
+	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), Ht_(clone_iter_state), Ht_(reset_iter_state), state, iterator)) {
 		Ht_(free_iter_state)(state);
 		return false;
 	}
@@ -1136,7 +1167,7 @@ RZ_API bool Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNUL
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
 	rz_return_val_if_fail(state, false);
 
-	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state, iterator)) {
+	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), Ht_(clone_iter_state), Ht_(reset_iter_state), state, iterator)) {
 		Ht_(free_iter_state)(state);
 		return false;
 	}
@@ -1156,7 +1187,7 @@ RZ_API bool Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL 
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
 	rz_return_val_if_fail(state, false);
 
-	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state, iterator)) {
+	if (!rz_iterator_init((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), Ht_(clone_iter_state), Ht_(reset_iter_state), state, iterator)) {
 		Ht_(free_iter_state)(state);
 		return false;
 	}

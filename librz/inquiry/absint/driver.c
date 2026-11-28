@@ -23,8 +23,13 @@
  *     For io and instruction requests, main replies with the result to the thread that sent the request.
  */
 
+#include "inquiry/absint/absint_priv.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_intervaltree.h"
+#include "rz_util/rz_log.h"
+#include "rz_vector.h"
+#include <rz_inquiry/rz_icfg.h>
 #include <rz_inquiry/rz_absint.h>
-#include <rz_core.h>
 
 typedef struct interp_thread InterpThread;
 
@@ -251,14 +256,63 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_OK : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
+RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNULL RzAbsIntResult *res) {
+	rz_return_val_if_fail(icfg && res, false);
+	bool success = true;
+	RzAbsIntBlock *block;
+	RzIntervalTreeIter it;
+	rz_interval_tree_foreach (&res->blocks, it, block) {
+		ut64 start = rz_absint_block_get_start(block);
+		ut64 end_excl = rz_absint_block_get_end(block) + 1;
+		if (!rz_icfg_add_node(icfg, start, end_excl - start, &block->insn_offsets, res->entry)) {
+			RZ_LOG_WARN("Failed to add block 0x%" PFMT64x " to iCFG.\n", start);
+			success = false;
+			continue;
+		}
+		ut64 *to;
+		rz_vector_foreach (&block->jump_targets, to) {
+			rz_icfg_prepare_edge(icfg, start, *to, RZ_ICFG_EDGE_TYPE_JUMP);
+		}
+		rz_vector_foreach (&block->call_targets, to) {
+			rz_icfg_prepare_edge(icfg, start, *to, RZ_ICFG_EDGE_TYPE_CALL);
+		}
+		if (block->is_fallthrough) {
+			rz_icfg_prepare_edge(icfg, start, end_excl, RZ_ICFG_EDGE_TYPE_FALLTHROUGH);
+		}
+	}
+	return success;
+}
+
+RZ_API bool rz_absint_apply_icfg_to_analysis(
+	RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzBin *bin,
+	RZ_NONNULL RzIO *io,
+	RZ_NONNULL RzICFG *icfg,
+	RZ_NULLABLE RzAnalysisFcnNameChooser fcn_name_chooser,
+	RZ_NULLABLE void *fcn_name_chooser_priv) {
+	rz_return_val_if_fail(analysis && icfg, false);
+	size_t missing_nodes = rz_icfg_apply(icfg);
+	if (missing_nodes > 0) {
+		RZ_LOG_WARN("The analysis didn't find nodes for all edges.\n");
+	}
+	if (!rz_icfg_solve_conflicts(icfg, bin, io)) {
+		RZ_LOG_WARN("Some errors occurred during iCFG conflict solving.\n");
+	}
+
+	if (!rz_icfg_copy_to_analysis(icfg, analysis, fcn_name_chooser, fcn_name_chooser_priv)) {
+		RZ_LOG_WARN("Some errors occurred during the RzInquiry -> RzAnalysis conversion.\n");
+	}
+	return true;
+}
+
 /**
  * \brief The main loop of multi-threaded abstract interpretation.
  * It initialises: The IL cache, communication channels with the interpreter threads and collects the entry points to analyze.
  * It then spawns n interpreter threads, serving them IO requests, IL block lifting requests, collecting their results.
  */
-RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config) {
-	rz_return_val_if_fail(config && config->analysis && config->io && config->fcn_entry_points && config->n_threads > 0, false);
-	bool return_code = false;
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config, RZ_NONNULL RZ_BORROW RzICFG *icfg) {
+	rz_return_val_if_fail(config && config->analysis && config->io && config->bin && config->fcn_entry_points && config->n_threads > 0 && icfg, false);
+	bool return_code = true;
 	bool breaked = false;
 
 	RzILCacheConfig il_cache_config = RZ_IL_CACHE_CONFIG_NOP_UNLIFTED;
@@ -366,11 +420,9 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
-				char *name = config->choose_fcn_name ? config->choose_fcn_name(res->entry, config->choose_fcn_name_priv_data) : NULL;
-				if (!rz_absint_result_apply_to_analysis(res, config->analysis, name)) {
-					RZ_LOG_WARN("Failed to apply to analysis\n");
+				if (!rz_absint_add_result_to_icfg(icfg, res)) {
+					RZ_LOG_WARN("Failed to copy blocks to iCFG\n");
 				}
-				free(name);
 				rz_absint_result_free(msg.sender->inst, res);
 			} else {
 				RZ_LOG_WARN("Failed to analyze entry point 0x%" PFMT64x "\n", msg.payload.interp_result.entry);
@@ -384,7 +436,12 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		}
 	}
 
-	return_code = true;
+	if (!rz_absint_apply_icfg_to_analysis(config->analysis, config->bin, config->io, icfg, config->choose_fcn_name, config->choose_fcn_name_priv_data)) {
+		RZ_LOG_WARN("Failed to convert resolved icfg to analysis.\n");
+		return_code = false;
+	}
+	// TODO: Add comments
+	// TODO: data xrefs
 
 	rz_interrupt_break_pop(config->intr);
 

@@ -13,6 +13,8 @@
 #include <rz_util/rz_path.h>
 
 #include "core_private.h"
+#include "rz_inquiry/rz_icfg.h"
+#include "rz_util/rz_assert.h"
 #include "rz_util/rz_iterator.h"
 
 HEAPTYPE(ut64);
@@ -5518,7 +5520,9 @@ RZ_API bool rz_core_analysis_op_chunk_iter(
 		return false;
 	}
 
-	return rz_iterator_init((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx, iterator);
+	// no clone callback: the yielded RzAnalysisOp lives inside the state, so the iterator cannot be cloned
+	// Otherwise we can get use after frees on these RzAnalysisOp.
+	return rz_iterator_init((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, NULL, NULL, ctx, iterator);
 }
 
 /**
@@ -5750,8 +5754,7 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
 }
 
 /**
- *
- * Analyze and disassemble bytes use rz_analysis_op and rz_asm_disassemble
+ * \brief Analyze and disassemble bytes use rz_analysis_op and rz_asm_disassemble
  *
  * \param core     The RzCore instance
  * \param start_addr Address to start analysis from
@@ -5778,7 +5781,9 @@ RZ_API bool rz_core_analysis_bytes(
 		return false;
 	}
 
-	return rz_iterator_init((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, (rz_iterator_free_cb)core_decoded_bytes_free, ctx, iterator);
+	// no clone callback: the yielded RzCoreDecodedBytes lives inside the state, so the iterator cannot be cloned.
+	// Otherwise we can get use after frees on these RzCoreDecodedBytes.
+	return rz_iterator_init((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, (rz_iterator_free_cb)core_decoded_bytes_free, NULL, NULL, ctx, iterator);
 }
 
 /**
@@ -6538,7 +6543,11 @@ static char *cinquiry_choose_function_name(RzCore *core, ut64 addr) {
 	return rz_str_newf("inq.0x%" PFMT64x, addr);
 }
 
-static void cinquiry_collect_entrypoints_all(RzCore *core, RzSetU *res) {
+/**
+ * \brief Helper function to collect all entry points for the RzIL based analysis.
+ */
+RZ_API void rz_core_inquiry_collect_entrypoints_all(RzCore *core, RZ_OUT RzSetU *res) {
+	rz_return_if_fail(core && res);
 	RzPVector *vector;
 	const RzBinAddr *binmain;
 	RzBinAddr *entry;
@@ -6610,10 +6619,16 @@ static char *choose_function_name_cb(ut64 addr, void *user) {
 }
 
 static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
+	RzICFG *icfg = rz_icfg_new();
+	if (!icfg) {
+		return false;
+	}
+	rz_icfg_set_heuristics(icfg, rz_icfg_heuristics_from_core(core));
 	RzAbsIntDriverConfig config = {
 		.intr = core->intr,
 		.analysis = core->analysis,
 		.io = core->io,
+		.bin = core->bin,
 		.fcn_entry_points = fcn_entry_points,
 		.dimens = RZ_ABSINT_RESULT_DIMEN_XREFS,
 		.trace_opts = absint_trace_opts(core),
@@ -6624,10 +6639,11 @@ static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 	if (rz_config_get_bool(core->config, "inquiry.comment")) {
 		config.dimens |= RZ_ABSINT_RESULT_DIMEN_COMMENTS;
 	}
-	bool success = rz_absint_driver_run(&config);
+	bool success = rz_absint_driver_run(&config, icfg);
 	if (!success) {
 		RZ_LOG_ERROR("Analysis failed.\n");
 	}
+	rz_icfg_free(icfg);
 	return success;
 }
 
@@ -6653,7 +6669,7 @@ RZ_API bool rz_core_inquiry_analyze_all(RZ_NONNULL RzCore *core) {
 	if (!entry_points) {
 		return false;
 	}
-	cinquiry_collect_entrypoints_all(core, entry_points);
+	rz_core_inquiry_collect_entrypoints_all(core, entry_points);
 	bool ret = cinquiry_absint_run(core, entry_points);
 	rz_set_u_free(entry_points);
 	return ret;
