@@ -188,6 +188,7 @@ RZ_API size_t rz_base32_encode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const ut
  *         \c malloc, or \c NULL if \p src is \c NULL or a memory‑allocation
  *         failure occurs.  The caller is responsible for \c free()‑ing the
  *         returned buffer.
+ *         Empty input produces an allocated empty string.
  *
  * This function is the Base‑32 analogue of \c rz_base64_encode_dyn.  It first
  * computes the exact output size—\c 1 + 8 × ((n + 4)/5) bytes to accommodate
@@ -205,12 +206,16 @@ RZ_API size_t rz_base32_encode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const ut
  */
 RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NONNULL const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src, NULL);
+	if (n < 1) {
+		return rz_str_dup("");
+	}
 	size_t buf_sz = calculate_dest_length(n) + 1;
 	char *out = (char *)malloc(buf_sz);
 	if (!out) {
 		return NULL;
 	}
 	if (rz_base32_encode(out, src, n) == 0) {
+		free(out);
 		return NULL;
 	}
 	out[buf_sz - 1] = '\0';
