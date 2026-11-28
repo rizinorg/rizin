@@ -130,6 +130,7 @@ typedef struct rz_core_file_t {
 	struct rz_core_t *core;
 	int dbg;
 	int fd;
+	ut64 loadaddr; ///< address this file was mapped at when it was opened (rizin -m)
 	RzPVector /*<RzBinFile *>*/ binfiles; ///< all bin files that have been created for this core file
 	RzPVector /*<RzIODesc *>*/ extra_files; ///< additional files opened during mapping, for example for zeroed maps
 	RzPVector /*<RzIOMap *>*/ maps; ///< all maps that have been created as a result of loading this file
