@@ -39,6 +39,14 @@ static const char *config_exclude_save[] = {
 };
 
 static const char *config_exclude_load[] = {
+	"cfg.cpuaffinity", // host/session preference
+	"cfg.editor", // host/session preference
+	"cfg.exit.errorcode", // session-level batch exit code setting
+	"cfg.fortunes", // host/session preference
+	"cfg.fortunes.clippy",
+	"cfg.fortunes.file",
+	"cfg.json.status", // session-level JSON status envelope for rzpipe/batch consumers
+	"cfg.user", // host/session preference
 	"dir.home",
 	"dir.libs",
 	"dir.magic",
@@ -49,14 +57,23 @@ static const char *config_exclude_load[] = {
 	"dir.tmp",
 	"dir.types",
 	"http.root",
+	"log.abortlevel", // host/session logging config
+	"log.colors",
+	"log.events",
+	"log.file", // loading log.file from an external project would redirect host log writes
+	"log.level",
+	"log.show.sources",
 	"pdb.symstore",
+	"prj.compress", // user save-compression preference
 	"scr.color",
 	"scr.color.args",
 	"scr.color.bytes",
 	"scr.color.grep",
 	"scr.color.ops",
 	"scr.color.pipe",
+	"scr.html", // session output format; loading true would corrupt plain/pipe output
 	"scr.interactive", // especially relevant for Cutter since it needs this to be false
+	"scr.null", // loading true would silently suppress all subsequent output
 	"scr.prompt", // especially relevant for rzpipe, otherwise loading a project might break the pipe
 	"scr.rainbow",
 	"scr.utf8",

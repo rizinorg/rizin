@@ -142,3 +142,65 @@ CMDS=s 0
 EXIT_STATUS=0
 EXPECT=
 RUN
+
+NAME=cfg.exit.errorcode: preserved when loading project saved with false
+FILE=bins/other/0x3
+ARGS=-e cfg.exit.errorcode=true
+CMDS=<<EOF
+e cfg.exit.errorcode=false
+Ps .tmp_exit_errcode_off.rzdb
+e cfg.exit.errorcode=true
+Poo .tmp_exit_errcode_off.rzdb
+rm .tmp_exit_errcode_off.rzdb
+e cfg.exit.errorcode
+zzz
+EOF
+EXIT_STATUS=1
+EXPECT=<<EOF
+true
+EOF
+RUN
+
+NAME=cfg.exit.errorcode: preserved when loading project saved with true
+FILE=bins/other/0x3
+CMDS=<<EOF
+e cfg.exit.errorcode=true
+Ps .tmp_exit_errcode_on.rzdb
+e cfg.exit.errorcode=false
+Po .tmp_exit_errcode_on.rzdb
+rm .tmp_exit_errcode_on.rzdb
+e cfg.exit.errorcode
+zzz
+EOF
+EXIT_STATUS=0
+EXPECT=<<EOF
+false
+EOF
+RUN
+
+NAME=cfg.json.status: preserved across project load
+FILE=bins/other/0x3
+CMDS=<<EOF
+e cfg.json.status=false
+Ps .tmp_json_status_off.rzdb
+e cfg.json.status=true
+Ps .tmp_json_status_on.rzdb
+Poo .tmp_json_status_off.rzdb
+e cfg.json.status
+flj
+e cfg.json.status=false
+Po .tmp_json_status_on.rzdb
+e cfg.json.status
+flj
+rm .tmp_json_status_off.rzdb
+rm .tmp_json_status_on.rzdb
+EOF
+EXPECT=<<EOF
+true
+[]
+{"error":null}
+false
+[]
+EOF
+EXPECT_ERR=
+RUN
