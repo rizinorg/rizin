@@ -3677,10 +3677,11 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 
 	case R_RISCV_ADD8: {
 		ut8 old_val = 0;
-		rz_buf_read_ble8_at(buf_patched, patch_addr, &old_val, big_endian);
+		bool success = rz_buf_read_ble8_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD8 [r]");
 		ut64 result = ((ut64)old_val) + S + A;
 		ut64 addr = patch_addr;
-		bool success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)result, big_endian);
+		success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)result, big_endian);
 		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD8");
 		break;
 	}
