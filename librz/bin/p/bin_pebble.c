@@ -123,7 +123,7 @@ static RzPVector /*<RzBinSection *>*/ *pebble_sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = rz_pvector_new(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	// TODO: load all relocs
@@ -193,12 +193,17 @@ static RzPVector /*<RzBinAddr *>*/ *pebble_entries(RzBinFile *bf) {
 	return ret;
 }
 
+static void pebble_destroy(RzBinFile *bf) {
+	RZ_FREE(bf->o->bin_obj);
+}
+
 RzBinPlugin rz_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",
 	.author = "pancake",
 	.load_buffer = &pebble_load_buffer,
+	.destroy = &pebble_destroy,
 	.check_buffer = &pebble_check_buffer,
 	.baddr = &pebble_baddr,
 	.entries = pebble_entries,

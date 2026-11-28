@@ -96,7 +96,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	psxexe_header psxheader;
 	ut64 sz = 0;
 
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -131,7 +131,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *addr = NULL;
 	psxexe_header psxheader;
 
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 

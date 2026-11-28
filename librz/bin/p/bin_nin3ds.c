@@ -144,7 +144,7 @@ static RzPVector /*<RzBinSection *>*/ *n3ds_sections(RzBinFile *bf) {
 	N3DSFirmHdr *hdr = n3ds_get_hdr(bf);
 
 	RzPVector *ret = NULL;
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 

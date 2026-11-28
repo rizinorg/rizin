@@ -488,6 +488,11 @@ static RzStructuredData *pef_structure(RzBinFile *bf) {
 	return info;
 }
 
+static void pef_destroy(RzBinFile *bf) {
+	pef_container_free(bf->o->bin_obj);
+	bf->o->bin_obj = NULL;
+}
+
 RZ_API RzBinPlugin rz_bin_plugin_pef = {
 	.name = "pef",
 	.desc = "Preferred Executable Format",
@@ -495,6 +500,7 @@ RZ_API RzBinPlugin rz_bin_plugin_pef = {
 	.author = "farhan-25",
 	.check_buffer = &pef_check_buffer,
 	.load_buffer = &pef_load_buffer,
+	.destroy = &pef_destroy,
 	.entries = &pef_entries,
 	.sections = &pef_sections,
 	.maps = &rz_bin_maps_of_file_sections,

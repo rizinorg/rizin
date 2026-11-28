@@ -49,7 +49,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		eprintf("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinSection))) {

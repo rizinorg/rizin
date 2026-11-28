@@ -397,6 +397,7 @@ void *rz_bin_te_free(struct rz_bin_te_obj_t *bin) {
 	free(bin->header);
 	free(bin->section_header);
 	rz_buf_free(bin->b);
+	sdb_free(bin->kv);
 	free(bin);
 	return NULL;
 }

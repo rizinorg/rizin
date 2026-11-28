@@ -740,6 +740,116 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+bool test_bin_pebble_and_nro_destroy(void) {
+	// Synthetic Pebble binary ("PBLAPP\0\0" + 128-byte header) exercises
+	// pebble_sections and pebble_destroy
+	ut8 pebble[128] = { 0 };
+	memcpy(pebble, "PBLAPP\0\0", 8);
+	rz_write_le16(pebble + 14, sizeof(pebble));
+	memcpy(pebble + 24, "testapp", 7);
+
+	RzBin *bin = rz_bin_new();
+	mu_assert_notnull(bin, "rz_bin_new pebble");
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new pebble");
+	rz_io_bind(io, &bin->iob);
+
+	RzBuffer *pbuf = rz_buf_new_with_bytes(pebble, sizeof(pebble));
+	mu_assert_notnull(pbuf, "pebble buffer");
+	RzBinOptions bopt;
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "synthetic.pbw";
+	RzBinFile *pbf = rz_bin_open_buf(bin, pbuf, &bopt);
+	mu_assert_notnull(pbf, "open synthetic pebble");
+	mu_assert_notnull(pbf->o, "pebble object");
+	mu_assert_streq(pbf->o->plugin->name, "pebble", "pebble plugin selected");
+	rz_bin_file_delete(bin, pbf);
+	rz_buf_free(pbuf);
+
+	// Synthetic NRO binary ("NRO0" at offset 0x10) exercises nro sections and destroy
+	ut8 nro[0x80] = { 0 };
+	memcpy(nro + 0x10, "NRO0", 4);
+	rz_write_le32(nro + 0x18, sizeof(nro));
+
+	RzBuffer *nbuf = rz_buf_new_with_bytes(nro, sizeof(nro));
+	mu_assert_notnull(nbuf, "nro buffer");
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "synthetic.nro";
+	RzBinFile *nbf = rz_bin_open_buf(bin, nbuf, &bopt);
+	mu_assert_notnull(nbf, "open synthetic nro");
+	mu_assert_notnull(nbf->o, "nro object");
+	mu_assert_streq(nbf->o->plugin->name, "nro", "nro plugin selected");
+	rz_bin_file_delete(bin, nbf);
+	rz_buf_free(nbuf);
+
+	// NRO with mod_memoffset causing ut32 wraparound on mod0 + 8 < bufsz
+	// exercises mod0sz read failure cleanup in bin_nro.c sections()
+	ut8 nro_bad_mod0[0x80] = { 0 };
+	rz_write_le32(nro_bad_mod0 + 0x04, 0xfffffff9U);
+	memcpy(nro_bad_mod0 + 0x10, "NRO0", 4);
+	rz_write_le32(nro_bad_mod0 + 0x18, sizeof(nro_bad_mod0));
+
+	RzBuffer *nbad = rz_buf_new_with_bytes(nro_bad_mod0, sizeof(nro_bad_mod0));
+	mu_assert_notnull(nbad, "nro bad mod0 buffer");
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "bad_mod0.nro";
+	RzBinFile *nbad_bf = rz_bin_open_buf(bin, nbad, &bopt);
+	mu_assert_notnull(nbad_bf, "open nro with out-of-bounds mod0");
+	mu_assert_streq(nbad_bf->o->plugin->name, "nro", "nro plugin selected for bad mod0");
+
+	// Calling sections() with an empty buffer exercises NRO_OFFSET_MODMEMOFF read failure
+	RzBuffer *orig_buf = nbad_bf->buf;
+	RzBuffer *empty_buf = rz_buf_new_with_bytes(NULL, 0);
+	mu_assert_notnull(empty_buf, "empty buffer");
+	nbad_bf->buf = empty_buf;
+	mu_assert_null(nbad_bf->o->plugin->sections(nbad_bf), "nro sections returns NULL on short buffer");
+	nbad_bf->buf = orig_buf;
+	rz_buf_free(empty_buf);
+	rz_bin_file_delete(bin, nbad_bf);
+	rz_buf_free(nbad);
+
+	// Valid minimal TE binary (40-byte header + 40-byte section header) exercises bin_te sections()
+	ut8 te_valid[80] = { 0 };
+	te_valid[0] = 0x56; // 'V'
+	te_valid[1] = 0x5a; // 'Z'
+	rz_write_le16(te_valid + 2, 0x014c); // Machine: i386
+	te_valid[4] = 1; // NumberOfSections
+	te_valid[5] = 10; // Subsystem: EFI Application
+	rz_write_le16(te_valid + 6, 40); // StrippedSize
+	memcpy(te_valid + 40, ".text\0\0\0", 8);
+	rz_write_le32(te_valid + 48, 0x10); // VirtualSize
+	rz_write_le32(te_valid + 52, 0x1000); // VirtualAddress
+	rz_write_le32(te_valid + 56, 0x10); // SizeOfRawData
+	rz_write_le32(te_valid + 60, 0x50); // PointerToRawData
+	rz_write_le32(te_valid + 76, 0x60000020); // Characteristics (R|X)
+
+	RzBuffer *tbuf = rz_buf_new_with_bytes(te_valid, sizeof(te_valid));
+	mu_assert_notnull(tbuf, "te valid buffer");
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "synthetic.te";
+	RzBinFile *tbf = rz_bin_open_buf(bin, tbuf, &bopt);
+	mu_assert_notnull(tbf, "open synthetic te");
+	mu_assert_streq(tbf->o->plugin->name, "te", "te plugin selected");
+	rz_bin_file_delete(bin, tbf);
+	rz_buf_free(tbuf);
+
+	// Truncated TE binary ("VZ\0\0") yields NULL bin_obj and exercises rz_pvector_free(ret) in bin_te sections()
+	ut8 te_short[4] = { 0x56, 0x5a, 0x00, 0x00 };
+	RzBuffer *tsbuf = rz_buf_new_with_bytes(te_short, sizeof(te_short));
+	mu_assert_notnull(tsbuf, "te truncated buffer");
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "truncated.te";
+	RzBinFile *tsbf = rz_bin_open_buf(bin, tsbuf, &bopt);
+	mu_assert_notnull(tsbf, "open truncated te");
+	mu_assert_streq(tsbf->o->plugin->name, "te", "te plugin selected for truncated input");
+	rz_bin_file_delete(bin, tsbf);
+	rz_buf_free(tsbuf);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +861,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_pebble_and_nro_destroy);
 	return tests_passed != tests_run;
 }
 
