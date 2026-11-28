@@ -134,3 +134,91 @@ f803000001000000
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=ELF: x86-64 GOT load in an object resolves to the global (#7134)
+FILE=bins/elf/x86-got-relocs64.o
+CMDS=<<EOF
+aa
+pdf @ sym.bump
+# The entry loaded holds the address of shape_total.
+s sym.bump
+aezi
+aezs 1
+ar rcx
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+/ sym.bump();
+|           0x08000040      mov   rcx, qword [0x08000430]              ; [0x8000430:8]=0x80000c0 obj.shape_total; RELOC 32 shape_total @ 0x080000c0 - 0x8000047 ; [01] -r-x section size 104 named .text
+|           0x08000047      mov   eax, dword [rcx]
+|           0x08000049      inc   eax
+|           0x0800004b      mov   dword [rcx], eax
+\           0x0800004d      ret
+rcx = 0x00000000080000c0
+EOF
+RUN
+
+NAME=ELF: x86-64 GOT relocations of an object get GOT entries (#7134)
+FILE=bins/elf/x86-got-relocs64.o
+ARGS=-e asm.sub.names=false
+CMDS=<<EOF
+oml~got
+# The entries of shape_total, ext_data, ext_func and local_data.
+pxq 0x20 @ 0x08000430
+# The third load is ext_data@GOTPCREL + 4.
+pd 6 @ sym._start
+# R_X86_64_CODE_4_GOTPCRELX of an APX mov, which the disassembler does not decode.
+pv4 @ 0x08000078
+# An object has GOT address 0, which R_X86_64_GOTPC32 puts in r15.
+pd 5 @ 0x0800007c
+# R_X86_64_GOTPCREL, R_X86_64_GOTPCREL64, R_X86_64_GOT32 and R_X86_64_GOT64 in .data.
+pv4 @ 0x080000a8
+pv8 @ 0x080000ac
+pv4 @ 0x080000b4
+pv8 @ 0x080000b8
+EOF
+EXPECT=<<EOF
+ 2 fd: 5 +0x00000000 0x08000430 - 0x0800044f r-- vmap.got
+0x08000430  0x00000000080000c0  0x00000000080003a8   ................
+0x08000440  0x00000000080003b0  0x00000000080000a8   ................
+            ;-- _start:
+            0x0800004e      mov   rax, qword [0x08000438]              ; [0x8000438:8]=0x80003a8 reloc.target.ext_data; RELOC 32 ext_data
+            0x08000055      mov   eax, dword [0x08000438]              ; [0x8000438:4]=0x80003a8 reloc.target.ext_data; RELOC 32 ext_data
+            0x0800005b      mov   eax, dword [0x0800043c]              ; [0x800043c:4]=0; RELOC 32 ext_data
+            0x08000061      call  qword [0x08000440]                   ; [0x8000440:8]=0x80003b0 reloc.target.ext_func; RELOC 32 ext_func
+            0x08000067      jmp   qword [0x08000440]                   ; [0x8000440:8]=0x80003b0 reloc.target.ext_func; RELOC 32 ext_func
+            0x0800006d      add   rax, qword [0x08000448]              ; [0x8000448:8]=0x80000a8 loc.local_data; RELOC 32 local_data @ 0x080000a8 - 0x8000074
+0x000003bc
+            0x0800007c      lea   r15, qword [0x00000000]              ; RELOC 32 _GLOBAL_OFFSET_TABLE_
+            0x08000083      mov   rax, qword [r15+0x8000438]           ; RELOC 32 ext_data
+            0x0800008a      mov   rax, 0x8000430                       ; RELOC 64 shape_total @ 0x080000c0
+            0x08000094      mov   rax, 0x8000440                       ; RELOC 64 ext_func
+            0x0800009e      mov   rax, 0x80000a8                       ; loc.local_data; RELOC 64 local_data @ 0x080000a8
+0x00000390
+0x000000000000038c
+0x08000448
+0x0000000008000440
+EOF
+RUN
+
+NAME=ELF: x32 GOT entries of an object have 8 bytes (#7134)
+FILE=bins/elf/x86-got-relocs-x32.o
+CMDS=<<EOF
+oml~got
+# The entries of ext_func and ext_data, which an indirect call reads 8 bytes of.
+pxq 0x10 @ 0x08000150
+# R_X86_64_GOTPCRELX of the call and of the load, R_X86_64_GOT32, and R_X86_64_GOTPCREL in .data.
+pv4 @ 0x08000036
+pv4 @ 0x0800003c
+pv4 @ 0x08000043
+pv4 @ 0x08000047
+EOF
+EXPECT=<<EOF
+ 2 fd: 5 +0x00000000 0x08000150 - 0x0800015f r-- vmap.got
+0x08000150  0x000000000800013c  0x0000000008000140   <.......@.......
+0x00000116
+0x00000118
+0x08000158
+0x00000109
+EOF
+RUN

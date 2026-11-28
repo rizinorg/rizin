@@ -1497,12 +1497,16 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	case R_ARM_BASE_PREL:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = fs->B + fs->A - fs->P;
+		// Linkers take the GOT for B(S), whatever S is.
+		val = fs->GOT + fs->A - fs->P;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 
 	case R_ARM_GOT_BREL:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->A;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
@@ -1686,12 +1690,18 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_GOT_PREL:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->GOT + fs->A - fs->P;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 	case R_ARM_GOT_ABS:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->GOT + fs->A;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
@@ -1699,13 +1709,33 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_THM_GOT_BREL12:
-		/* fall through */
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		// The imm12 of LDR.W, which only adds it, is in the second halfword.
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		keephw2 = (keephw2 & 0xF000) | ((fs->G + fs->A) & 0xFFF); // G(S) + A - GOT_ORG
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
 	case R_ARM_TLS_IE12GP:
 		/* fall through */
 	case R_ARM_GOT_BREL12:
-		// val = imm12
-		val = (fs->G + fs->A) & 0xFFF; // G(S) + A - GOT_ORG
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, val);
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = fs->G + fs->A; // G(S) + A - GOT_ORG
+		u_bit = 0x00800000;
+		if (val >> 63) {
+			u_bit = 0;
+			val = ~val + 1;
+		}
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian);
+		rz_write_ble32(buf, (keep & 0xFF7FF000) | u_bit | (val & 0xFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
 	case R_ARM_GOTOFF12:
@@ -1739,6 +1769,9 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	case R_ARM_TLS_LDM32:
 		/* fall through */
 	case R_ARM_TLS_IE32:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->GOT + fs->A - fs->P;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
@@ -2214,6 +2247,8 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	ut8 buf[8] = { 0 };
 	ut64 val = 0;
 	bool big_endian = false;
+	// G(GDAT(S)), the address of the GOT entry of S; G is its offset into the GOT.
+	ut64 got_entry = fs->GOT + fs->G;
 
 #define MOVW_IMM_MASK (0xFFFFU << 5) // bits [20:5]
 #define MOVW_HW_MASK  (0x3U << 21) // bits [22:21]
@@ -2393,7 +2428,10 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian) & ~ADR_IMM_MASK;
 		if (rel->type == R_AARCH64_ADR_GOT_PAGE || rel->type == R_AARCH64_P32_ADR_GOT_PAGE) {
-			val = ((st64)(PG(fs->G) - PG(fs->P))) >> 12;
+			if (fs->G == UT64_MAX) {
+				return;
+			}
+			val = ((st64)(PG(got_entry) - PG(fs->P))) >> 12;
 		} else {
 			val = ((st64)(PG(fs->S + fs->A) - PG(fs->P))) >> 12;
 		}
@@ -2415,21 +2453,21 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		// Set LD/ST immediate to bits [11:0] of (S + A)
 		// LD/ST: imm12 at bits [21:10]
 		val = PG_OFFSET(fs->S + fs->A);
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST16_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST16_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:1] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 1;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST32_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST32_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:2] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 2;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST64_ABS_LO12_NC:
@@ -2438,18 +2476,21 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_LD64_GOT_LO12_NC:
 		// Set LD/ST immediate to bits [11:3] of (S + A) or G
 		if (rel->type == R_AARCH64_LD64_GOT_LO12_NC) {
-			val = PG_OFFSET(fs->G) >> 3;
+			if (fs->G == UT64_MAX) {
+				return;
+			}
+			val = PG_OFFSET(got_entry) >> 3;
 		} else {
 			val = PG_OFFSET(fs->S + fs->A) >> 3;
 		}
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST128_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST128_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:4] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 4;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_TSTBR14:
@@ -2554,7 +2595,10 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 
 	case R_AARCH64_MOVW_GOTOFF_G0:
 		// Set MOV[NZ] immediate to bits [15:0] of (G(GDAT(S+A)) - GOT)
-		val = fs->G - fs->GOT;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = got_entry - fs->GOT;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
 		if ((st64)val >= 0) {
@@ -2567,13 +2611,19 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 
 	case R_AARCH64_MOVW_GOTOFF_G0_NC:
 		// Set MOVK immediate to bits [15:0] of (G(GDAT(S+A)) - GOT)
-		val = (fs->G - fs->GOT) & 0xFFFF;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = (got_entry - fs->GOT) & 0xFFFF;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
 		break;
 
 	case R_AARCH64_MOVW_GOTOFF_G1:
 		// Set MOV[NZ] immediate to bits [31:16] of (G(GDAT(S+A)) - GOT)
-		val = fs->G - fs->GOT;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = got_entry - fs->GOT;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
 		if ((st64)val >= 0) {
@@ -2586,13 +2636,19 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 
 	case R_AARCH64_MOVW_GOTOFF_G1_NC:
 		// Set MOVK immediate to bits [31:16] of (G(GDAT(S+A)) - GOT)
-		val = ((fs->G - fs->GOT) >> 16) & 0xFFFF;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = ((got_entry - fs->GOT) >> 16) & 0xFFFF;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
 		break;
 
 	case R_AARCH64_MOVW_GOTOFF_G2:
 		// Set MOV[NZ] immediate to bits [47:32] of (G(GDAT(S+A)) - GOT)
-		val = fs->G - fs->GOT;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = got_entry - fs->GOT;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
 		if ((st64)val >= 0) {
@@ -2605,13 +2661,19 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 
 	case R_AARCH64_MOVW_GOTOFF_G2_NC:
 		// Set MOVK immediate to bits [47:32] of (G(GDAT(S+A)) - GOT)
-		val = ((fs->G - fs->GOT) >> 32) & 0xFFFF;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = ((got_entry - fs->GOT) >> 32) & 0xFFFF;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, MOVW_IMM_MASK, val);
 		break;
 
 	case R_AARCH64_MOVW_GOTOFF_G3:
 		// Set MOV[NZ] immediate to bits [63:48] of (G(GDAT(S+A)) - GOT)
-		val = fs->G - fs->GOT;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = got_entry - fs->GOT;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian) & ~(MOVW_IMM_MASK | MOVW_OPC_MASK);
 		if ((st64)val >= 0) {
@@ -2640,31 +2702,46 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_P32_GOT_LD_PREL19:
 		// Set load-literal immediate to bits [20:2] of (G(GDAT(S+A)) - P)
 		// LDR literal: imm19 at bits [23:5]
-		val = ((st64)(fs->G - fs->P)) >> 2;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = ((st64)(got_entry - fs->P)) >> 2;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, BRANCH_IMM19_MASK, val & 0x7FFFF);
 		break;
 
 	case R_AARCH64_LD64_GOTOFF_LO15:
 		// Set LD/ST immediate to bits [14:3] of (G(GDAT(S+A)) - GOT)
-		val = (fs->G - fs->GOT) >> 3;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = (got_entry - fs->GOT) >> 3;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_P32_LD32_GOT_LO12_NC:
 		// Set LD/ST immediate to bits [11:2] of G(GDAT(S+A))
-		val = PG_OFFSET(fs->G) >> 2;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = PG_OFFSET(got_entry) >> 2;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LD64_GOTPAGE_LO15:
 		// Set LD/ST immediate to bits [14:3] of (G(GDAT(S+A)) - Page(GOT))
-		val = (fs->G - PG(fs->GOT)) >> 3;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = (got_entry - PG(fs->GOT)) >> 3;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_P32_LD32_GOTPAGE_LO14:
 		// Set LD/ST immediate to bits [13:2] of (G(GDAT(S+A)) - Page(GOT))
-		val = (fs->G - PG(fs->GOT)) >> 2;
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = (got_entry - PG(fs->GOT)) >> 2;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
@@ -3042,6 +3119,7 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		val = fs->GOT + fs->A - fs->P;
 		break;
 	case R_X86_64_GOT64:
+	case R_X86_64_GOTPLT64:
 		if (fs->G == UT64_MAX) {
 			return;
 		}

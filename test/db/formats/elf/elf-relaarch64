@@ -117,13 +117,13 @@ EOF
 EXPECT=<<EOF
             ;-- reloc..data.800012c:
             ;-- test_got_relative:
-            0x0800012c      adrp  x0, 0xfffffffffffff000               ; RELOC 0 .data @ 0x08000178
+            0x0800012c      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178
             ;-- reloc..data.8000130:
-            0x08000130      adrp  x0, 0xfffffffffffff000               ; RELOC 0 .data @ 0x08000178
+            0x08000130      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178
             ;-- reloc..data.8000134:
-            0x08000134      ldr   x0, [x0, 0x6000]                     ; RELOC 0 .data @ 0x08000178
+            0x08000134      ldr   x0, [x0, 0xd28]                      ; RELOC 0 .data @ 0x08000178
             ;-- reloc..data.8000138:
-            0x08000138      ldr   x1, 0x7fffffc                        ; [0x7fffffc:8]=0x464c457fffffffff; RELOC 32 .data @ 0x08000178 - 0x8000138
+            0x08000138      ldr   x1, loc.defined_data                 ; [0x8000d28:8]=0x8000178 loc.defined_data; RELOC 32 .data @ 0x08000178 - 0x8000138
 EOF
 RUN
 
@@ -131,6 +131,7 @@ NAME= R_AARCH64_LDST* relocs
 FILE=bins/elf/aarch64_relocs.o
 CMDS=<<EOF
 ir~R_AARCH64_LDST
+# .data is mapped at its file offset 0x178, not 16-byte aligned, so LDST128 holds .data + 0x20 rounded down.
 pd 10 @ 0x080000b8
 EOF
 EXPECT=<<EOF
@@ -143,23 +144,23 @@ EXPECT=<<EOF
             ;-- test_ldst_abs_lo12:
             0x080000b8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x8
             ;-- reloc..data.80000bc:
-            0x080000bc      ldrb  w1, [x0]                             ; RELOC 64 .data @ 0x08000178 + 0x8
+            0x080000bc      ldrb  w1, [x0, 0x180]                      ; RELOC 64 .data @ 0x08000178 + 0x8
             ;-- reloc..data.80000c0:
             0x080000c0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xa
             ;-- reloc..data.80000c4:
-            0x080000c4      ldrh  w1, [x0, 0x800]                      ; RELOC 64 .data @ 0x08000178 + 0xa
+            0x080000c4      ldrh  w1, [x0, 0x182]                      ; RELOC 64 .data @ 0x08000178 + 0xa
             ;-- reloc..data.80000c8:
             0x080000c8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xc
             ;-- reloc..data.80000cc:
-            0x080000cc      ldr   w1, [x0, 0x1000]                     ; RELOC 64 .data @ 0x08000178 + 0xc
+            0x080000cc      ldr   w1, [x0, 0x184]                      ; RELOC 64 .data @ 0x08000178 + 0xc
             ;-- reloc..data.80000d0:
             0x080000d0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x10
             ;-- reloc..data.80000d4:
-            0x080000d4      ldr   x1, [x0, 0x2000]                     ; RELOC 64 .data @ 0x08000178 + 0x10
+            0x080000d4      ldr   x1, [x0, 0x188]                      ; RELOC 64 .data @ 0x08000178 + 0x10
             ;-- reloc..data.80000d8:
             0x080000d8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x20
             ;-- reloc..data.80000dc:
-            0x080000dc      ldr   q0, [x0, 0x4000]                     ; RELOC 64 .data @ 0x08000178 + 0x20
+            0x080000dc      ldr   q0, [x0, 0x190]                      ; RELOC 64 .data @ 0x08000178 + 0x20
 EOF
 RUN
 
@@ -208,7 +209,7 @@ EOF
 EXPECT=<<EOF
      vaddr      paddr     target type                        name                  
 -----------------------------------------------------------------------------------
-0x08000040 0x00000040 0x08000180 R_AARCH64_ADR_PREL_PG_HI21  _GLOBAL_OFFSET_TABLE_
+0x08000040 0x00000040 0x08000198 R_AARCH64_ADR_PREL_PG_HI21  _GLOBAL_OFFSET_TABLE_
 0x08000044 0x00000044 0x00000008 R_AARCH64_LD64_GOTPAGE_LO15 global1
 0x08000048 0x00000048 0x00000008 R_AARCH64_LD64_GOTPAGE_LO15 global2
             ;-- section..text:
@@ -216,8 +217,117 @@ EXPECT=<<EOF
             ;-- _start:
             0x08000040      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 _GLOBAL_OFFSET_TABLE_ ; [02] -r-x section size 12 named .text
             ;-- reloc.global1:
-            0x08000044      ldr   x0, [x0, 0x7ff8]                     ; RELOC 0 global1 @ 0x00000008
+            0x08000044      ldr   x0, [x0, 0x198]                      ; RELOC 0 global1 @ 0x00000008
             ;-- reloc.global2:
-            0x08000048      ldr   x1, [x0, 0x7ff8]                     ; RELOC 0 global2 @ 0x00000008
+            0x08000048      ldr   x1, [x0, 0x1a0]                      ; RELOC 0 global2 @ 0x00000008
+EOF
+RUN
+
+NAME=ELF: AArch64 GOT load in an object resolves to the global (#7134)
+FILE=bins/elf/aarch64-got-relocs.o
+CMDS=<<EOF
+# The page and offset of the GOT entry of shape_total, which holds its address.
+pd 2 @ sym.bump
+s sym.bump
+aezi
+aezs 2
+ar x8
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- reloc.shape_total:
+            ;-- bump:
+            0x08000040      adrp  x8, segment.ehdr                     ; 0x8000000; RELOC 0 shape_total ; [02] -r-x section size 116 named .text
+            ;-- reloc.shape_total.8000044:
+            0x08000044      ldr   x8, [x8, 0x490]                      ; RELOC 0 shape_total
+x8 = 0x0000000008000400
+EOF
+RUN
+
+NAME=ELF: AArch64 GOT relocations of an object get GOT entries (#7134)
+FILE=bins/elf/aarch64-got-relocs.o
+ARGS=-e asm.sub.names=false
+CMDS=<<EOF
+oml~got
+# The entries of shape_total, ext_data, local_data and ext_func.
+pxq 0x20 @ 0x08000490
+# GCC's code: the page of the GOT from _GLOBAL_OFFSET_TABLE_, and the offset of the entry of ext_data from it.
+pi 2 @ sym.load
+# A literal load of the entry of local_data, the GOT, then offsets from it of the entry of ext_func.
+pi 14 @ sym._start
+# RzIL loads the addresses of ext_data, local_data and ext_func.
+s sym.load
+aezi
+aezs 2
+ar x0
+s sym._start
+aezi
+aezs 18
+ar x0
+ar x2
+ar x3
+ar x4
+ar x5
+ar x6
+ar x7
+EOF
+EXPECT=<<EOF
+ 2 fd: 5 +0x00000000 0x08000490 - 0x080004af r-- vmap.got
+0x08000490  0x0000000008000400  0x0000000008000408   ................
+0x080004a0  0x00000000080000b4  0x0000000008000410   ................
+adrp x0, 0x8000000
+ldr x0, [x0, 0x498]
+ldr x2, 0x80004a0
+adrp x0, 0x8000000
+add x0, x0, 0x490
+ldr x3, [x0, 0x18]
+mov x4, 0x18
+movz x5, 0, lsl 16
+movk x5, 0x18
+movz x6, 0, lsl 32
+movk x6, 0, lsl 16
+movk x6, 0x18
+movz x7, 0, lsl 48
+movk x7, 0, lsl 32
+movk x7, 0, lsl 16
+movk x7, 0x18
+x0 = 0x0000000008000408
+x0 = 0x0000000008000490
+x2 = 0x00000000080000b4
+x3 = 0x0000000008000410
+x4 = 0x0000000008000410
+x5 = 0x0000000008000410
+x6 = 0x0000000008000410
+x7 = 0x0000000008000410
+EOF
+RUN
+
+NAME=ELF: AArch64 ILP32 GOT entries of an object have 4 bytes (#7134)
+FILE=bins/elf/aarch64-ilp32-got-relocs.o
+ARGS=-e asm.sub.names=false
+CMDS=<<EOF
+oml~got
+# The entries of ext_data, local_data and ext_func.
+pxw 0xc @ 0x08000190
+pi 6 @ sym._start
+s sym._start
+aezi
+aezs 5
+ar x0
+ar x1
+ar x2
+EOF
+EXPECT=<<EOF
+ 2 fd: 5 +0x00000000 0x08000190 - 0x0800019b r-- vmap.got
+0x08000190  0x0800017c 0x0800004c 0x08000180             |...L.......
+adrp x0, 0x8000000
+ldr w0, [x0, 0x190]
+ldr w1, 0x8000194
+adrp x2, 0x8000000
+ldr w2, [x2, 0x198]
+ret
+x0 = 0x000000000800017c
+x1 = 0x000000000800004c
+x2 = 0x0000000008000180
 EOF
 RUN

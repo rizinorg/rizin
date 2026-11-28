@@ -215,6 +215,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 	RzBuffer *b;
 
 	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
+	RzBuffer *buf_got; ///< GOT entries made up for an x86 relocatable object, which has no GOT yet
 	bool relocs_patched;
 	ut64 reloc_targets_map_base;
 

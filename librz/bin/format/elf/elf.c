@@ -414,6 +414,7 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 
 	rz_buf_free(bin->b);
 	rz_buf_free(bin->buf_patched);
+	rz_buf_free(bin->buf_got);
 
 	sdb_free(bin->kv);
 
