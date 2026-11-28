@@ -799,6 +799,9 @@ static vle_t *find_ppc(const ut8 *buffer) {
 		p = &ppc_ops[i];
 		if ((p->op & data) == p->op && (p->mask & data) == data) {
 			vle_t *ret = RZ_NEW0(vle_t);
+			if (!ret) {
+				return NULL;
+			}
 			ret->name = p->name;
 			ret->size = 4;
 			ret->n = 0;
@@ -819,6 +822,9 @@ static vle_t *find_e(const ut8 *buffer) {
 		p = &e_ops[i];
 		if ((p->op & data) == p->op && (p->mask & data) == data) {
 			vle_t *ret = RZ_NEW0(vle_t);
+			if (!ret) {
+				return NULL;
+			}
 			ret->name = p->name;
 			ret->size = 4;
 			ret->n = 0;
@@ -839,6 +845,9 @@ static vle_t *find_se(const ut8 *buffer) {
 		p = &se_ops[i];
 		if ((p->op & data) == p->op && (p->mask & data) == data) {
 			vle_t *ret = RZ_NEW0(vle_t);
+			if (!ret) {
+				return NULL;
+			}
 			ret->name = p->name;
 			ret->size = 2;
 			ret->analysis_op = p->analysis_op;
