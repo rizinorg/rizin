@@ -386,6 +386,8 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 							flagname = newstr;
 						}
 					}
+					const size_t data_len = strlen(data);
+					const size_t flag_len = flagname ? strlen(flagname) : 0;
 					snprintf(str, len, "%s%s%s", data, rz_str_get(flagname), (ptr != ptr2) ? ptr2 : "");
 					free(flagname);
 					bool banned = false;
@@ -397,14 +399,14 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 							banned = true;
 						}
 					}
-					if (p->subrel_addr && !banned && lea) { // TODO: use remove_brackets
-						int flag_len = strlen(flag->name);
-						char *ptr_end = str + strlen(data) + flag_len - 1;
-						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
-						bool ansi_found = false;
-						if (!*ptr_end) {
+					if (p->subrel_addr && !banned && lea && flag_len > 0) { // TODO: use remove_brackets
+						const size_t str_len = strlen(str);
+						if (data_len + flag_len > str_len) {
 							return true;
 						}
+						char *ptr_end = str + data_len + flag_len - 1;
+						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
+						bool ansi_found = false;
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
 								while (*ptr_right && *ptr_right != 'm') {
