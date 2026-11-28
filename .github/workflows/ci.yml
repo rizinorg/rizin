@@ -349,7 +349,7 @@ jobs:
         if: matrix.coverage && matrix.enabled
         run: |
           gcovr --version
-          gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml --merge-mode-functions=separate build
+          gcovr -j $(nproc) --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml --merge-mode-functions=separate build
       - name: Upload coverage to Codecov
         if: matrix.coverage && matrix.enabled
         uses: codecov/codecov-action@v7

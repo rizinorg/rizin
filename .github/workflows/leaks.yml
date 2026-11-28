@@ -30,8 +30,8 @@ jobs:
             os: ubuntu-24.04
             build_system: meson
             compiler: gcc
-            cflags: "-DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
-            meson_options: -Dbuildtype=debug -Db_sanitize=leak --werror
+            cflags: "-DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=leak --werror
             timeout: 120
 
     env:
