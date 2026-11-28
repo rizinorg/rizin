@@ -21,6 +21,7 @@ if get_option('enable_tests')
     'analysis_h8300',
     'analysis_hints',
     'analysis_meta',
+    'analysis_prelude',
     'analysis_var',
     'analysis_xrefs',
     'annotated_code',

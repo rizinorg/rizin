@@ -1,0 +1,10 @@
+default.cc=hppa
+
+hppa=cc
+cc.hppa.arg0=r26
+cc.hppa.arg1=r25
+cc.hppa.arg2=r24
+cc.hppa.arg3=r23
+cc.hppa.argn=stack
+cc.hppa.maxargs=4
+cc.hppa.ret=r28

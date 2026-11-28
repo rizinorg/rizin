@@ -150,6 +150,132 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_addr_new_from_paddr(bin, paddr);
 }
 
+static bool parisc_in_text(ELFOBJ *bin, ut64 vaddr) {
+	RzBinElfSection *section;
+	rz_bin_elf_foreach_sections(bin, section) {
+		if (section->is_valid && (section->flags & SHF_EXECINSTR) &&
+			vaddr >= section->rva && vaddr - section->rva < section->size) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/// The raw ELF symbol value remains the descriptor address for relocations.
+static ut64 parisc64_function_address(ELFOBJ *bin, ut64 ptr) {
+	ut64 offset = Elf_(rz_bin_elf_parisc64_entry_word)(bin, ptr);
+	Elf_(Addr) entry;
+	if (offset != UT64_MAX && Elf_(rz_bin_elf_read_addr)(bin, &offset, &entry) && parisc_in_text(bin, entry)) {
+		return entry;
+	}
+	return ptr;
+}
+
+/**
+ * \brief Get the code address of a PA-RISC constructor or destructor.
+ *
+ * Narrow-mode pointers use bit 1 to tag descriptors. Shared objects may
+ * fill their entry word from a local addend or a defined dynamic symbol.
+ */
+static ut64 parisc_plabel_target(ELFOBJ *bin, ut64 ptr) {
+	if (bin->ehdr.e_machine != EM_PARISC) {
+		return ptr;
+	}
+	if (sizeof(Elf_(Addr)) == 8) {
+		return parisc64_function_address(bin, ptr);
+	}
+	if (!(ptr & 2)) {
+		return ptr;
+	}
+	ut64 desc = ptr & ~(ut64)3;
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (reloc->vaddr != desc || reloc->type != R_PARISC_IPLT) {
+			continue;
+		}
+		if (!reloc->sym) {
+			return reloc->addend;
+		}
+		if (!Elf_(rz_bin_elf_get_import)(bin, reloc->sym)) {
+			RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
+			if (symbol && symbol->vaddr != UT64_MAX) {
+				return (ut32)(symbol->vaddr + reloc->addend);
+			}
+		}
+		return UT64_MAX;
+	}
+	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, desc);
+	Elf_(Addr) target;
+	if (offset == UT64_MAX || !Elf_(rz_bin_elf_read_addr)(bin, &offset, &target) || !target) {
+		return ptr;
+	}
+	return target;
+}
+
+static void parisc_add_plabel_symbol(ELFOBJ *bin, RzSetU *known, ut64 vaddr, RzPVector /*<RzBinSymbol *>*/ *result) {
+	if (rz_set_u_contains(known, vaddr) || !parisc_in_text(bin, vaddr)) {
+		return;
+	}
+	RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
+	if (!symbol) {
+		return;
+	}
+	symbol->name = rz_str_newf("func.%08" PFMT64x, vaddr);
+	symbol->vaddr = vaddr;
+	symbol->paddr = Elf_(rz_bin_elf_v2p)(bin, vaddr);
+	symbol->forwarder = "NONE";
+	symbol->bind = RZ_BIN_BIND_LOCAL_STR;
+	symbol->type = RZ_BIN_TYPE_FUNC_STR;
+	symbol->ordinal = rz_pvector_len(result);
+	symbol->bits = bin->bits;
+	if (!symbol->name || !rz_pvector_push(result, symbol)) {
+		rz_bin_symbol_free(symbol);
+		return;
+	}
+	rz_set_u_add(known, vaddr);
+}
+
+/**
+ * \brief Add the local functions behind PA-RISC plabels as symbols, as code
+ * may reach them only through their descriptors.
+ *
+ * The descriptors of function and gp start .plt, written by the linker in
+ * executables and by IPLT relocs without a symbol in shared objects.
+ */
+static void parisc_add_plabel_symbols(ELFOBJ *bin, RzPVector /*<RzBinSymbol *>*/ *result) {
+	if (bin->ehdr.e_machine != EM_PARISC || sizeof(Elf_(Addr)) != 4) {
+		return;
+	}
+	RzSetU *known = rz_set_u_new();
+	if (!known) {
+		return;
+	}
+	void **it;
+	rz_pvector_foreach (result, it) {
+		rz_set_u_add(known, ((RzBinSymbol *)*it)->vaddr);
+	}
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (reloc->type == R_PARISC_IPLT && !reloc->sym) {
+			parisc_add_plabel_symbol(bin, known, reloc->addend, result);
+		}
+	}
+	RzBinElfSection *plt = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt");
+	if (plt && plt->is_valid && bin->elfctx && bin->elfctx->got_addr != ELF_ADDR_MAX) {
+		for (ut64 pos = 0; pos + 2 * sizeof(Elf_(Addr)) <= plt->size; pos += 2 * sizeof(Elf_(Addr))) {
+			ut64 offset = plt->offset + pos;
+			Elf_(Addr) function, gp;
+			if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &function) || !Elf_(rz_bin_elf_read_addr)(bin, &offset, &gp)) {
+				break;
+			}
+			if (gp == bin->elfctx->got_addr) {
+				parisc_add_plabel_symbol(bin, known, function, result);
+			}
+		}
+	}
+	rz_set_u_free(known);
+}
+
 static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzPVector /*<RzBinAddr *>*/ *result) {
 	ut64 constructor_offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (constructor_offset == UT64_MAX) {
@@ -171,7 +297,12 @@ static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzPVect
 			continue;
 		}
 
-		RzBinAddr *tmp = rz_bin_addr_new_from_vaddr(bin, vaddr);
+		ut64 target = parisc_plabel_target(bin, vaddr);
+		if (target == UT64_MAX) {
+			pos += sizeof(Elf_(Addr));
+			continue;
+		}
+		RzBinAddr *tmp = rz_bin_addr_new_from_vaddr(bin, target);
 		if (!tmp) {
 			break;
 		}
@@ -997,6 +1128,14 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols_obj(void *elf_obj) {
 			return NULL;
 		}
 
+		if (sizeof(Elf_(Addr)) == 8 && bin->ehdr.e_machine == EM_PARISC &&
+			RZ_STR_EQ(tmp->type, RZ_BIN_TYPE_FUNC_STR)) {
+			ut64 entry = parisc64_function_address(bin, tmp->vaddr);
+			if (entry != tmp->vaddr) {
+				tmp->vaddr = entry;
+				tmp->paddr = Elf_(rz_bin_elf_v2p)(bin, entry);
+			}
+		}
 		rz_pvector_push(ret, tmp);
 	}
 
@@ -1013,6 +1152,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols_obj(void *elf_obj) {
 		rz_pvector_push(ret, tmp);
 	}
 
+	parisc_add_plabel_symbols(bin, ret);
 	return ret;
 }
 

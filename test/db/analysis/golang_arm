@@ -305,6 +305,6 @@ TAIL
 0x308060 9 9 btcwallet
 0x308f22 11 11 btcctl.conf
 0x307bd6 8 8 rpc.cert
-14368
+14367
 EOF
 RUN

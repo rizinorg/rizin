@@ -864,8 +864,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		int cnt;
 		int idx;
 		int after;
-		int pending;
-		int adjust;
+		bool pending;
 		int un_idx; // delay.un_idx
 	} delay = {
 		0
@@ -1054,7 +1053,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		if (op.hint.new_bits) {
 			rz_analysis_hint_set_bits(analysis, op.jump, op.hint.new_bits);
 		}
-		if (idx > 0 && !overlapped) {
+		bool revisiting_branch = delay.pending && !delay.cnt;
+		if (idx > 0 && !overlapped && !revisiting_branch) {
 			bbg = bbget(analysis, at, can_jmpmid);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
@@ -1069,7 +1069,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				RZ_LOG_DEBUG("Overlapped at 0x%08" PFMT64x "\n", at);
 			}
 		}
-		if (!overlapped) {
+		if (!overlapped && !revisiting_branch) {
 			ut64 newbbsize = bb->size + oplen;
 			if (fcn->ninstr >= analysis->opt.fcn_max_size) {
 				gotoBeach(RZ_ANALYSIS_RET_ERROR);
@@ -1094,7 +1094,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			rz_analysis_block_set_size(bb, newbbsize);
 			fcn->ninstr++;
 		}
-		if (analysis->opt.trycatch && analysis->binb.get_trycatch) {
+		if (!revisiting_branch && analysis->opt.trycatch && analysis->binb.get_trycatch) {
 			RzPVector *tcs = analysis->binb.get_trycatch(analysis->binb.bin);
 			if (tcs) {
 				void **it;
@@ -1115,16 +1115,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		idx += oplen;
 		delay.un_idx = idx;
 		if (analysis->opt.delay && op.delay > 0 && !delay.pending) {
-			// Handle first pass through a branch delay jump:
-			// Come back and handle the current instruction later.
-			// Save the location of it in `delay.idx`
-			// note, we have still increased size of basic block
-			// (and function)
-			RZ_LOG_DEBUG("Enter branch delay at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", at - oplen, bb->size);
+			// The transfer takes effect after its slots. Record the stack pointer on entry to the first slot.
+			if (!overlapped) {
+				rz_analysis_block_set_op_sp_delta(bb, bb->ninstr - 1, sp - bb->sp_entry);
+			}
+			RZ_LOG_DEBUG("Enter branch delay at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", at, bb->size);
 			delay.idx = idx - oplen;
 			delay.cnt = op.delay;
-			delay.pending = 1; // we need this in case the actual idx is zero...
-			delay.adjust = !overlapped; // adjustment is required later to avoid double count
+			delay.pending = true;
 			continue;
 		}
 
@@ -1142,21 +1140,12 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				// at the original instruction that entered
 				// the branch delay.
 			}
-		} else if (op.delay > 0 && delay.pending) {
+		} else if (revisiting_branch) {
 			RZ_LOG_DEBUG("Revisit branch delay jump at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", addr + idx - oplen, bb->size);
-			// This is the second pass of the branch delaying opcode
-			// But we also already counted this instruction in the
-			// size of the current basic block, so we need to fix that
-			if (delay.adjust) {
-				rz_analysis_block_set_size(bb, (ut64)delay.after);
-				fcn->ninstr--;
-				RZ_LOG_DEBUG("Correct for branch delay @ 0x%08" PFMT64x " bb.addr=0x%08" PFMT64x " corrected.bb=%" PFMT64u " f.uncorr=%" PFMT64u "\n",
-					addr + idx - oplen, bb->addr, bb->size, rz_analysis_function_linear_size(fcn));
-			}
 			// Next time, we go to the opcode after the delay count
 			// Take care not to use this below, use delay.un_idx instead ...
 			idx = delay.after;
-			delay.pending = delay.after = delay.idx = delay.adjust = 0;
+			delay.pending = false;
 		}
 		// Note: if we got two branch delay instructions in a row due to an
 		// compiler bug or junk or something it wont get treated as a delay

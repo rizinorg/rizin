@@ -1059,6 +1059,17 @@ static char *get_osabi_name_from_ehdr(ELFOBJ *bin) {
 	case ELFOSABI_FREEBSD:
 		return rz_str_dup("freebsd");
 	case ELFOSABI_HPUX:
+		// PA-RISC linkers also use the HP-UX ABI byte for BSD binaries.
+		if (bin->ehdr.e_machine == EM_PARISC) {
+			char *name = get_osabi_name_from_shdr(bin);
+			if (name) {
+				return name;
+			}
+			RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_OPENBSD_RANDOMIZE);
+			if (segment && segment->is_valid) {
+				return rz_str_dup("openbsd");
+			}
+		}
 		return rz_str_dup("hpux");
 	}
 
@@ -1499,6 +1510,11 @@ static char *get_abi_mips(ELFOBJ *bin) {
 }
 
 static char *get_cpu_hppa(ELFOBJ *bin) {
+	if (bin->ehdr.e_flags & EF_PARISC_WIDE) {
+		// 64-bit code takes wider displacements from the same fields
+		return strdup("hppa2.0w");
+	}
+
 	Elf_(Word) hppa_arch = bin->ehdr.e_flags & EF_PARISC_ARCH;
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_hppa_translation_table); i++) {

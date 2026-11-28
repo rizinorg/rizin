@@ -209,6 +209,8 @@ typedef struct Elf_(rz_bin_elf_context_t) {
 
 	RzBinElfSection *plt_got; // .plt.got section
 	RzBinElfSection *plt_sec; // .plt.sec section
+	RzBinElfSection *parisc_opd; ///< PA-RISC 64-bit procedure descriptors
+	HtUU *parisc_import_stubs; ///< PA-RISC PLT slot to import stub address
 } RzElfCtx;
 
 struct Elf_(rz_bin_elf_obj_t) {
@@ -391,6 +393,7 @@ bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_sections.c
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
+ut64 Elf_(rz_bin_elf_parisc64_entry_word)(RZ_NONNULL ELFOBJ *bin, ut64 descriptor);
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section_with_name)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *name);
 RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag);
 RZ_OWN RzVector /*<RzBinElfSection>*/ *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections);

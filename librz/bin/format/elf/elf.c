@@ -322,6 +322,9 @@ static void init_elf_context(ELFOBJ *bin) {
 		mips_got_addr = UT64_MAX;
 	}
 
+	if (sizeof(Elf_(Addr)) == 8 && bin->ehdr.e_machine == EM_PARISC) {
+		bin->elfctx->parisc_opd = Elf_(rz_bin_elf_get_section_with_name)(bin, ".opd");
+	}
 	bin->elfctx->plt_got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.got");
 	bin->elfctx->plt_sec = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.sec");
 
@@ -434,6 +437,9 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 
 	ht_uu_free(bin->got_sym_id_off);
 
+	if (bin->elfctx) {
+		ht_uu_free(bin->elfctx->parisc_import_stubs);
+	}
 	free(bin->elfctx);
 	free(bin);
 }

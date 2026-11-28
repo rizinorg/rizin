@@ -790,7 +790,14 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 	rz_analysis_block_recurse(block, noreturn_successors_cb, succs);
 
 	// Chop the block. Resize and remove all destination addrs
-	rz_analysis_block_set_size(block, addr - block->addr);
+	if (addr - block->addr < block->size) {
+		block->ninstr = rz_analysis_block_get_op_index_in(block, addr - 1) + 1;
+		size_t ndeltas = rz_vector_len(&block->sp_delta);
+		if (ndeltas > (size_t)block->ninstr) {
+			rz_vector_remove_range(&block->sp_delta, block->ninstr, ndeltas - block->ninstr, NULL);
+		}
+		rz_analysis_block_set_size(block, addr - block->addr);
+	}
 	rz_analysis_block_update_hash(block);
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
