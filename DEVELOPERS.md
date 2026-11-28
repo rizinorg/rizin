@@ -456,32 +456,34 @@ compliance of the project and get the licenses/copyright of each file.
 In Rizin code, there are some conventions to help developers use pointers more safely, which are defined in `librz/include/rz_types.h`:
 
 ```c
-#define RZ_IN        /* do not use, implicit */
-#define RZ_OUT       /* parameter is written, not read */
-#define RZ_INOUT     /* parameter is read and written / return value is copy of RZ_INOUT parameter */
-#define RZ_OWN       /* pointer ownership is transferred */
-#define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
-#define RZ_NONNULL   /* pointer cannot be null */
-#define RZ_NULLABLE  /* pointer can be null */
-#define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+#define RZ_IN           /* do not use, implicit */
+#define RZ_OUT          /* parameter is written, not read */
+#define RZ_INOUT        /* parameter is read and written / return value is copy of RZ_INOUT parameter */
+#define RZ_OWN          /* pointer ownership is transferred */
+#define RZ_BORROW       /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define RZ_OWN_IF_VALID /* pointer ownership is transferred if parameter is valid, otherwise it is not transferred */
+#define RZ_NONNULL      /* pointer cannot be null */
+#define RZ_NULLABLE     /* pointer can be null */
+#define RZ_DEPRECATE    /* should not be used in new code and should/will be removed in the future */
 ```
 
 ### Usage of Modifiers
 
-Most of these modifiers are self-explanatory, and you can see brief explanations in the comments. However, `RZ_OWN` and `RZ_BORROW` can be a bit tricky for new developers.
+Most of these modifiers are self-explanatory, and you can see brief explanations in the comments. However, `RZ_OWN`, `RZ_BORROW` and `RZ_OWN_IF_VALID` can be a bit tricky for new developers.
 
-Sometimes it may not be immediately clear whether the object you are getting from a function shall be freed or not.
-Rizin uses `RZ_OWN` and `RZ_BORROW` to indicate pointer ownership,
-so you don't have to read complicated function definitions to know whether they should still free objects or not.
+Sometimes it may not be immediately clear whether the object you are getting from a function or passing to a function should be freed or not by the caller.
+Rizin uses `RZ_OWN`, `RZ_BORROW` and `RZ_OWN_IF_VALID` to indicate pointer ownership,
+so you don't have to read complicated function definitions to know whether the caller should still free objects or not.
 
-You can use the two modifiers in two places, and their explanations are as follows:
+You can use the 3 modifiers in 2 places, and their explanations are as follows:
 
 - **Before the return type of a function**:
   - `RZ_OWN`: The ownership of the returned object is transferred to the caller. The caller *owns* the object, so it must free it (or ensure that something else frees it).
   - `RZ_BORROW`: The ownership of the returned object is not transferred. The caller can use the object, but it does not own it, so it should not free it.
 - **Before the parameter of a function**:
-  - `RZ_OWN`: The ownership of the passed argument is transferred to the callee. The callee now owns the object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
+  - `RZ_OWN`: The ownership of the passed argument is transferred to the callee. The callee now owns the passed object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
   - `RZ_BORROW`: The ownership of the passed argument is *not* transferred to the callee, which can use it but it should not free it. After calling this function, the caller still owns the passed object and it should ensure that at some point it is freed.
+  - `RZ_OWN_IF_VALID`: If the passed argument is valid as determined by the callee, the same semantics as `RZ_OWN` apply (callee owns the passed object). Otherwise, the same semantics as `RZ_BORROW` apply (callee returns ownership of passed object to caller).
 
 ### Guidelines for Functions
 
