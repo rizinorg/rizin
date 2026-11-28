@@ -740,6 +740,73 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+static bool test_vtable_api_and_edge_cases(void) {
+	rz_analysis_vtable_info_free(NULL);
+
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_config_set(core->config, "asm.arch", "x86");
+	RzCoreFile *cf = rz_core_file_open(core, "malloc://16", RZ_PERM_RWX, 0);
+	mu_assert_notnull(cf, "open malloc://16");
+	mu_assert_notnull(rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0, 16), "map malloc://16");
+	const ut8 bytes[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+	mu_assert_true(rz_io_write_at(core->io, 0, bytes, sizeof(bytes)), "write test bytes");
+
+	static const struct {
+		int bits;
+		ut8 ws;
+		ut64 le;
+		ut64 be;
+	} cases[] = {
+		{ 8, 1, 0x01ULL, 0x01ULL },
+		{ 16, 2, 0x0201ULL, 0x0102ULL },
+		{ 32, 4, 0x04030201ULL, 0x01020304ULL },
+		{ 64, 8, 0x0807060504030201ULL, 0x0102030405060708ULL },
+	};
+
+	RVTableContext ctx = { 0 };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_true(rz_analysis_set_bits(core->analysis, cases[i].bits), "set_bits");
+		rz_analysis_set_big_endian(core->analysis, false);
+		mu_assert_true(rz_analysis_vtable_begin(core->analysis, &ctx), "vtable_begin LE");
+		mu_assert_eq(ctx.word_size, cases[i].ws, "word_size LE");
+		ut64 val = 0;
+		mu_assert_true(ctx.read_addr(core->analysis, 0, &val), "read_addr LE");
+		mu_assert_eq(val, cases[i].le, "read_addr LE value");
+		mu_assert_false(ctx.read_addr(core->analysis, 0x1000, &val), "read_addr OOB");
+
+		rz_analysis_set_big_endian(core->analysis, true);
+		mu_assert_true(rz_analysis_vtable_begin(core->analysis, &ctx), "vtable_begin BE");
+		mu_assert_true(ctx.read_addr(core->analysis, 0, &val), "read_addr BE");
+		mu_assert_eq(val, cases[i].be, "read_addr BE value");
+	}
+
+	mu_assert_true(rz_analysis_set_bits(core->analysis, 64), "set_bits 64");
+	rz_analysis_set_big_endian(core->analysis, false);
+	mu_assert_true(rz_analysis_vtable_begin(core->analysis, &ctx), "vtable_begin 64");
+
+	RVTableInfo info = { 0 };
+	rz_vector_init(&info.methods, sizeof(RVTableMethodInfo), NULL, NULL);
+	mu_assert_eq(rz_analysis_vtable_info_get_size(&ctx, &info), 0, "empty vtable size");
+	RVTableMethodInfo m = { .addr = 0x1000, .vtable_offset = 0 };
+	rz_vector_push(&info.methods, &m);
+	rz_vector_push(&info.methods, &m);
+	mu_assert_eq(rz_analysis_vtable_info_get_size(&ctx, &info), 16, "2-method vtable size");
+	rz_vector_fini(&info.methods);
+
+	mu_assert_null(rz_analysis_vtable_parse_at(&ctx, 0x1000), "parse_at unmapped returns NULL");
+
+	/* No bin object loaded -> sections == NULL */
+	mu_assert_null(rz_analysis_vtable_search(&ctx), "search without bin sections returns NULL");
+
+	/* NULL analysis guard */
+	RVTableContext empty_ctx = { 0 };
+	mu_assert_null(rz_analysis_vtable_search(&empty_ctx), "search with NULL analysis returns NULL");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +818,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_vtable_api_and_edge_cases);
 	return tests_passed != tests_run;
 }
 
