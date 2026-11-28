@@ -293,6 +293,10 @@ extern "C" {
 	#define RZ_SYS_ARCH "alpha"
 	#define RZ_SYS_BITS RZ_SYS_BITS_64
 	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif defined(__loongarch__) && __loongarch_grlen == 64
+	#define RZ_SYS_ARCH   "loongarch"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_64
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
 #else
 	#ifdef _MSC_VER
 		#if defined(_M_X64) || defined(_M_AMD64)
