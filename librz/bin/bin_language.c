@@ -14,6 +14,177 @@ static inline bool check_rust(RzBinSymbol *sym) {
 		strstr(sym->name, "rust_oom");
 }
 
+#define RUST_SECTION_SCAN_LIMIT (8 * 1024 * 1024)
+#define RUST_SECTION_CHUNK_SZ   65536
+#define RUST_SECTION_OVERLAP    64
+
+typedef struct {
+	const char *str;
+	size_t len;
+	size_t anchor;
+} RustMarker;
+
+#define RUST_MARKER(lit, anc) { lit, sizeof(lit) - 1, anc }
+
+static bool buf_contains_marker(const ut8 *buf, size_t len, const RustMarker *m) {
+	if (len < m->len) {
+		return false;
+	}
+	const ut8 *p = buf + m->anchor;
+	size_t rem = len - m->len + 1;
+	int ch = (ut8)m->str[m->anchor];
+	while (rem > 0) {
+		const ut8 *hit = memchr(p, ch, rem);
+		if (!hit) {
+			return false;
+		}
+		if (!memcmp(hit - m->anchor, m->str, m->len)) {
+			return true;
+		}
+		size_t adv = (size_t)(hit - p) + 1;
+		p += adv;
+		rem -= adv;
+	}
+	return false;
+}
+
+static bool section_has_rust_marker(const ut8 *buf, size_t len) {
+	static const RustMarker markers[] = {
+		RUST_MARKER("called `Option::unwrap()` on a `None` value", 7),
+		RUST_MARKER("called `Result::unwrap()` on an `Err` value", 7),
+		RUST_MARKER("index out of bounds: the len is ", 19),
+		RUST_MARKER("/library/core/src/", 7),
+		RUST_MARKER("\\library\\core\\src\\", 7),
+		RUST_MARKER("/library/std/src/", 7),
+		RUST_MARKER("\\library\\std\\src\\", 7),
+		RUST_MARKER("core/src/panicking.rs", 14),
+		RUST_MARKER("core\\src\\panicking.rs", 14),
+		RUST_MARKER("std/src/panicking.rs", 13),
+		RUST_MARKER("std\\src\\panicking.rs", 13),
+		RUST_MARKER(".cargo/registry/src/", 14),
+		RUST_MARKER(".cargo\\registry\\src\\", 14),
+		RUST_MARKER("fatal runtime error: ", 19),
+		RUST_MARKER("rust_begin_unwind", 13),
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(markers); i++) {
+		if (buf_contains_marker(buf, len, &markers[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool is_rust_scan_section(const RzBinSection *sec) {
+	if (!sec || sec->is_segment || !sec->name || !sec->size) {
+		return false;
+	}
+	return strstr(sec->name, "rodata") ||
+		strstr(sec->name, "rdata") ||
+		rz_str_endswith(sec->name, "__const") ||
+		rz_str_endswith(sec->name, "__cstring");
+}
+
+static bool is_rust_fallback_section(const RzBinSection *sec) {
+	if (!sec || sec->is_segment || !sec->size ||
+		!(sec->perm & RZ_PERM_R) || (sec->perm & RZ_PERM_X)) {
+		return false;
+	}
+	if (sec->name && (!strcmp(sec->name, ".rsrc") || !strcmp(sec->name, ".reloc") || !strcmp(sec->name, ".pdata") || !strcmp(sec->name, ".idata") || !strcmp(sec->name, ".eh_frame") || !strcmp(sec->name, ".symtab") || !strcmp(sec->name, ".strtab") || !strcmp(sec->name, ".shstrtab") || rz_str_startswith(sec->name, ".debug"))) {
+		return false;
+	}
+	return true;
+}
+
+static bool scan_section_for_rust_markers(RzBuffer *buf, ut64 buf_size,
+	const RzBinSection *section, ut8 *chunk, ut64 *remaining_budget) {
+	if (!*remaining_budget || section->paddr >= buf_size) {
+		return false;
+	}
+	ut64 avail = buf_size - section->paddr;
+	ut64 to_scan = RZ_MIN(RZ_MIN(section->size, avail), *remaining_budget);
+	ut64 scanned = 0;
+	size_t carry = 0;
+	bool found = false;
+	while (scanned < to_scan) {
+		size_t want = (size_t)RZ_MIN(
+			(ut64)RUST_SECTION_CHUNK_SZ, to_scan - scanned);
+		st64 got = rz_buf_read_at(
+			buf, section->paddr + scanned, chunk + carry, want);
+		if (got <= 0 || (size_t)got > want) {
+			break;
+		}
+		size_t total = carry + (size_t)got;
+		if (section_has_rust_marker(chunk, total)) {
+			found = true;
+			break;
+		}
+		carry = RZ_MIN(total, (size_t)RUST_SECTION_OVERLAP);
+		memmove(chunk, chunk + total - carry, carry);
+		scanned += (ut64)got;
+	}
+	*remaining_budget -= RZ_MIN(*remaining_budget, scanned);
+	return found;
+}
+
+static bool check_rust_sections(RzBinFile *binfile) {
+	RzBinObject *o = binfile->o;
+	if (!o || !o->sections) {
+		return false;
+	}
+	void **iter;
+	RzBinSection *section;
+	rz_pvector_foreach (o->sections, iter) {
+		section = *iter;
+		if (section && section->name && !strcmp(section->name, ".rustc")) {
+			return true;
+		}
+	}
+	if (!binfile->buf) {
+		return false;
+	}
+	ut8 *chunk = malloc(RUST_SECTION_CHUNK_SZ + RUST_SECTION_OVERLAP);
+	if (!chunk) {
+		return false;
+	}
+	ut64 buf_size = rz_buf_size(binfile->buf);
+	ut64 remaining_budget = RUST_SECTION_SCAN_LIMIT;
+	bool found = false;
+	bool scanned_named = false;
+	rz_pvector_foreach (o->sections, iter) {
+		section = *iter;
+		if (!is_rust_scan_section(section)) {
+			continue;
+		}
+		scanned_named = true;
+		if (scan_section_for_rust_markers(
+			    binfile->buf, buf_size, section, chunk, &remaining_budget)) {
+			found = true;
+			break;
+		}
+		if (!remaining_budget) {
+			break;
+		}
+	}
+	if (!found && !scanned_named && remaining_budget) {
+		rz_pvector_foreach (o->sections, iter) {
+			section = *iter;
+			if (!is_rust_fallback_section(section)) {
+				continue;
+			}
+			if (scan_section_for_rust_markers(
+				    binfile->buf, buf_size, section, chunk, &remaining_budget)) {
+				found = true;
+				break;
+			}
+			if (!remaining_budget) {
+				break;
+			}
+		}
+	}
+	free(chunk);
+	return found;
+}
+
 static inline bool check_objc(RzBinSymbol *sym) {
 	return !strncmp(sym->name, "_OBJC_", 6);
 }
@@ -106,6 +277,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	bool is_blocks = false;
 	bool is_objc = false;
 	bool is_cpp = false;
+	bool has_cpp_lib = false;
 	char *lib = NULL;
 
 	if (!is_macho && !is_dyldc && !is_xnu_kernelcache && !is_elf && !is_pe && !is_class) {
@@ -132,6 +304,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 			return language_apply_blocks_mask(RZ_BIN_LANGUAGE_SWIFT, is_blocks);
 		} else if (strstr(lib, "stdc++") || strstr(lib, "c++")) {
 			is_cpp = true;
+			has_cpp_lib = true;
 		} else if (strstr(lib, "msvcp")) {
 			info->lang = "msvc";
 			return RZ_BIN_LANGUAGE_MSVC;
@@ -201,6 +374,10 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 				return RZ_BIN_LANGUAGE_GO;
 			}
 		}
+	}
+	if ((is_elf || is_pe || is_macho) && !has_cpp_lib && check_rust_sections(binfile)) {
+		info->lang = "rust";
+		return RZ_BIN_LANGUAGE_RUST;
 	}
 	if (is_cpp) {
 		info->lang = "c++";

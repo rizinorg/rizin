@@ -740,6 +740,34 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+static bool test_rust_lang_and_rtti_api_edges(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+
+	/* No bin loaded: rz_analysis_rtti_rust must be a clean no-op */
+	rz_analysis_rtti_rust(core->analysis);
+	RzPVector *classes = rz_analysis_class_get_all(core->analysis, false);
+	mu_assert_eq(classes ? rz_pvector_len(classes) : 0, 0, "no classes without bin");
+	rz_pvector_free(classes);
+
+	/* Loaded mock bin with non-ELF/PE/Mach-O format and no vtable sections */
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open mock bin");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load mock bin");
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "cur binfile");
+	mu_assert_eq(rz_bin_language_detect(bf), RZ_BIN_LANGUAGE_UNKNOWN, "non-elf/pe/macho unknown lang");
+
+	rz_analysis_rtti_rust(core->analysis);
+	classes = rz_analysis_class_get_all(core->analysis, false);
+	mu_assert_eq(classes ? rz_pvector_len(classes) : 0, 0, "no classes on mock bin");
+	rz_pvector_free(classes);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +779,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_rust_lang_and_rtti_api_edges);
 	return tests_passed != tests_run;
 }
 

@@ -18,7 +18,11 @@
  * https://github.com/rust-lang/rust/blob/main/compiler/rustc_middle/src/ty/vtable.rs
  */
 
-#define RUST_VTABLE_HEADER_SLOTS 3
+#define RUST_VTABLE_HEADER_SLOTS          3
+#define RUST_ANON_VTABLE_MAX_ALIGN        4096
+#define RUST_ANON_VTABLE_MAX_SIZE         0x100000
+#define RUST_ANON_VTABLE_MAX_METHODS      64
+#define RUST_ANON_VTABLE_MAX_VACANT_SLOTS 2
 
 /**
  * \brief Trait method recovered from a vtable slot and its demangled Rust symbol.
@@ -40,8 +44,8 @@ static void trait_method_fini(void *e, void *user) {
 	RZ_FREE(method->trait_name);
 }
 
-static bool section_can_contain_vtables(RzBinSection *section) {
-	if (section->is_segment) {
+static bool section_is_named_vtable_section(RzBinSection *section) {
+	if (section->is_segment || !section->name) {
 		return false;
 	}
 	return !strcmp(section->name, ".rodata") ||
@@ -49,6 +53,80 @@ static bool section_can_contain_vtables(RzBinSection *section) {
 		!strcmp(section->name, ".data.rel.ro") ||
 		!strcmp(section->name, ".data.rel.ro.local") ||
 		rz_str_endswith(section->name, "__const");
+}
+
+static bool section_is_fallback_vtable_section(RzBinSection *section) {
+	if (section->is_segment || !section->size || !section->vsize ||
+		!(section->perm & RZ_PERM_R) || (section->perm & RZ_PERM_X)) {
+		return false;
+	}
+	if (section->name && (!strcmp(section->name, ".rsrc") || !strcmp(section->name, ".reloc") || !strcmp(section->name, ".pdata") || !strcmp(section->name, ".idata") || !strcmp(section->name, ".tls") || !strcmp(section->name, ".eh_frame") || rz_str_startswith(section->name, ".debug"))) {
+		return false;
+	}
+	return true;
+}
+
+static bool has_named_vtable_sections(const RzPVector /*<RzBinSection *>*/ *sections) {
+	void **iter;
+	rz_pvector_foreach (sections, iter) {
+		if (section_is_named_vtable_section(*iter)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool section_can_contain_vtables(RzBinSection *section, bool allow_fallback) {
+	return section_is_named_vtable_section(section) ||
+		(allow_fallback && section_is_fallback_vtable_section(section));
+}
+
+static int reloc_vaddr_cmp(ut64 ref, RzBinReloc *reloc) {
+	return RZ_NUM_CMP(ref, reloc->vaddr);
+}
+
+static bool bin_has_relocs(RzBinObject *obj) {
+	if (!obj || !obj->relocs || !obj->relocs->relocs_count) {
+		return false;
+	}
+	bool is_pe = obj->info && obj->info->rclass && strstr(obj->info->rclass, "pe");
+	if (!is_pe) {
+		return true;
+	}
+	for (size_t i = 0; i < obj->relocs->relocs_count; i++) {
+		if (obj->relocs->relocs[i] && obj->relocs->relocs[i]->type != 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool addr_has_reloc(RzBin *bin, RzBinObject *obj, ut64 addr) {
+	if (!bin_has_relocs(obj)) {
+		return false;
+	}
+	bool is_pe = obj->info && obj->info->rclass && strstr(obj->info->rclass, "pe");
+	ut64 query;
+	if (is_pe) {
+		ut64 baddr = rz_bin_get_baddr(bin);
+		if (baddr == UT64_MAX || addr < baddr) {
+			return false;
+		}
+		query = addr - baddr;
+	} else {
+		query = addr - obj->baddr_shift;
+	}
+	RzBinRelocStorage *storage = obj->relocs;
+	size_t idx = 0;
+	rz_array_lower_bound(storage->relocs, storage->relocs_count, query, idx, reloc_vaddr_cmp);
+	for (; idx < storage->relocs_count && storage->relocs[idx]->vaddr == query; idx++) {
+		if (is_pe && storage->relocs[idx]->type == 0) {
+			// Skip PE IMAGE_REL_BASED_ABSOLUTE padding entries.
+			continue;
+		}
+		return true;
+	}
+	return false;
 }
 
 static bool addr_in_text_section(RzAnalysis *analysis, ut64 addr) {
@@ -163,7 +241,15 @@ static bool parse_method_name(RzAnalysis *analysis, ut64 addr, RustTraitMethod *
 	return ok;
 }
 
-static RZ_OWN RzVector /*<RustTraitMethod>*/ *parse_rust_vtable(RVTableContext *context, RzAnalysisVTable *vtable, ut64 end) {
+static bool section_has_room(RzBinObject *obj, RzBinSection *section, ut64 addr, ut64 needed) {
+	ut64 sec_vaddr = rz_bin_object_addr_with_base(obj, section->vaddr);
+	return addr >= sec_vaddr &&
+		addr - sec_vaddr <= section->vsize &&
+		section->vsize - (addr - sec_vaddr) >= needed;
+}
+
+static RZ_OWN RzVector /*<RustTraitMethod>*/ *parse_rust_vtable(RVTableContext *context,
+	RzAnalysisVTable *vtable, ut64 end, bool allow_fallback) {
 	if (!vtable_header_is_valid(context, vtable->addr)) {
 		return NULL;
 	}
@@ -195,9 +281,10 @@ static RZ_OWN RzVector /*<RustTraitMethod>*/ *parse_rust_vtable(RVTableContext *
 
 		if (!addr_in_text_section(context->analysis, method_addr)) {
 			RzBinSection *section = context->analysis->binb.get_vsect_at(context->analysis->binb.bin, method_addr);
-			if (!section || !section_can_contain_vtables(section) ||
+			RzBinObject *obj = rz_bin_cur_object(context->analysis->binb.bin);
+			if (!section || !section_can_contain_vtables(section, allow_fallback) ||
 				method_addr % context->word_size ||
-				section->vsize - (method_addr - section->vaddr) < header_size ||
+				!section_has_room(obj, section, method_addr, header_size) ||
 				!vtable_header_is_valid(context, method_addr)) {
 				break;
 			}
@@ -225,6 +312,139 @@ static RZ_OWN RzVector /*<RustTraitMethod>*/ *parse_rust_vtable(RVTableContext *
 	}
 
 	if (rz_vector_empty(methods)) {
+		rz_vector_free(methods);
+		return NULL;
+	}
+	return methods;
+}
+
+static bool anon_vtable_header_is_valid(RVTableContext *context, ut64 addr,
+	ut64 *drop_out, ut64 *size_out) {
+	ut64 drop = UT64_MAX;
+	ut64 size = UT64_MAX;
+	ut64 align = UT64_MAX;
+	if (!context->read_addr(context->analysis, addr, &drop) ||
+		!context->read_addr(context->analysis, addr + context->word_size, &size) ||
+		!context->read_addr(context->analysis, addr + (2 * context->word_size), &align)) {
+		return false;
+	}
+	if (drop && !addr_in_text_section(context->analysis, drop)) {
+		return false;
+	}
+	if (!align || align > RUST_ANON_VTABLE_MAX_ALIGN || rz_bits_count_ones_ut64(align) != 1) {
+		return false;
+	}
+	if (size > RUST_ANON_VTABLE_MAX_SIZE || (size && ((size % align) || align > size))) {
+		return false;
+	}
+	if (drop_out) {
+		*drop_out = drop;
+	}
+	if (size_out) {
+		*size_out = size;
+	}
+	return true;
+}
+
+static bool anon_vtable_starts_at(RVTableContext *context, ut64 addr, ut64 end) {
+	ut64 header_size = RUST_VTABLE_HEADER_SLOTS * context->word_size;
+	if (end - addr < header_size + context->word_size) {
+		return false;
+	}
+	if (!anon_vtable_header_is_valid(context, addr, NULL, NULL)) {
+		return false;
+	}
+	ut64 first_slot = UT64_MAX;
+	if (!context->read_addr(context->analysis, addr + header_size, &first_slot)) {
+		return false;
+	}
+	return addr_in_text_section(context->analysis, first_slot);
+}
+
+static RZ_OWN RzVector /*<RustTraitMethod>*/ *parse_rust_vtable_anon(
+	RVTableContext *context, RzAnalysisVTable *vtable, ut64 end, bool allow_fallback) {
+	ut64 drop = 0;
+	ut64 size = 0;
+	if (!anon_vtable_header_is_valid(context, vtable->addr, &drop, &size)) {
+		return NULL;
+	}
+
+	RzVector *methods = rz_vector_new(sizeof(RustTraitMethod), trait_method_fini, NULL);
+	if (!methods) {
+		return NULL;
+	}
+
+	ut64 header_size = RUST_VTABLE_HEADER_SLOTS * context->word_size;
+	ut64 slot_addr = vtable->addr + header_size;
+	size_t vacant_slots = 0;
+	vtable->size = header_size;
+	for (; end - slot_addr >= context->word_size &&
+		rz_vector_len(methods) < RUST_ANON_VTABLE_MAX_METHODS;
+		slot_addr += context->word_size) {
+		if (rz_interrupt_is_breaked(context->analysis->intr)) {
+			break;
+		}
+		if (anon_vtable_starts_at(context, slot_addr, end)) {
+			break;
+		}
+		ut64 method_addr = UT64_MAX;
+		if (!context->read_addr(context->analysis, slot_addr, &method_addr)) {
+			break;
+		}
+		if (!method_addr) {
+			vacant_slots++;
+			if (vacant_slots > RUST_ANON_VTABLE_MAX_VACANT_SLOTS) {
+				break;
+			}
+			continue;
+		}
+		vacant_slots = 0;
+		if (!addr_in_text_section(context->analysis, method_addr)) {
+			RzBinSection *section = context->analysis->binb.get_vsect_at(
+				context->analysis->binb.bin, method_addr);
+			RzBinObject *obj = rz_bin_cur_object(context->analysis->binb.bin);
+			if (!section || !section_can_contain_vtables(section, allow_fallback) ||
+				method_addr % context->word_size ||
+				!section_has_room(obj, section, method_addr, header_size) ||
+				!anon_vtable_header_is_valid(context, method_addr, NULL, NULL)) {
+				break;
+			}
+			vtable->size = slot_addr - vtable->addr + context->word_size;
+			continue;
+		}
+		ut64 off = slot_addr - vtable->addr;
+		RustTraitMethod method = {
+			.addr = method_addr,
+			.vtable_offset = off,
+			.name = rz_str_newf("method_0x%" PFMT64x, off),
+			.real_name = rz_str_newf(
+				"<anon_0x%" PFMT64x " as trait_0x%" PFMT64x ">::method_0x%" PFMT64x,
+				vtable->addr, vtable->addr, off),
+			.impl_type = rz_str_newf("anon_0x%" PFMT64x, vtable->addr),
+			.trait_name = rz_str_newf("trait_0x%" PFMT64x, vtable->addr),
+		};
+		if (!method.name || !method.real_name || !method.impl_type || !method.trait_name ||
+			!rz_vector_push(methods, &method)) {
+			trait_method_fini(&method, NULL);
+			break;
+		}
+		vtable->size = off + context->word_size;
+	}
+
+	size_t min_methods = drop ? 1 : 2;
+	if (!drop && rz_vector_len(methods) == 1 && size > 0) {
+		RzBin *bin = context->analysis->binb.bin;
+		RzBinObject *obj = rz_bin_cur_object(bin);
+		RustTraitMethod *m0 = rz_vector_index_ptr(methods, 0);
+		if (bin_has_relocs(obj) &&
+			!addr_has_reloc(bin, obj, vtable->addr) &&
+			!addr_has_reloc(bin, obj, vtable->addr + context->word_size) &&
+			!addr_has_reloc(bin, obj, vtable->addr + (2 * context->word_size)) &&
+			addr_has_reloc(bin, obj, vtable->addr + m0->vtable_offset)) {
+			min_methods = 1;
+		}
+	}
+	if (rz_vector_len(methods) < min_methods) {
 		rz_vector_free(methods);
 		return NULL;
 	}
@@ -329,32 +549,74 @@ RZ_API void rz_analysis_rtti_rust(RZ_NONNULL RzAnalysis *analysis) {
 	rz_interrupt_break_push(analysis->intr, NULL, NULL);
 	void **iter;
 	RzBinSection *section;
+	bool allow_fallback = !has_named_vtable_sections(sections);
+	bool found_named = false;
 	rz_pvector_foreach (sections, iter) {
 		if (rz_interrupt_is_breaked(analysis->intr)) {
 			break;
 		}
 		section = *iter;
-		if (!section_can_contain_vtables(section)) {
+		if (!section_can_contain_vtables(section, allow_fallback)) {
 			continue;
 		}
+		ut64 sec_vaddr = rz_bin_object_addr_with_base(obj, section->vaddr);
 		if (section->vsize < RUST_VTABLE_HEADER_SLOTS * context.word_size ||
-			section->vsize > UT64_MAX - section->vaddr) {
+			section->vsize > UT64_MAX - sec_vaddr) {
 			continue;
 		}
 
-		ut64 addr = RZ_ROUND(section->vaddr, context.word_size);
-		ut64 end = section->vaddr + section->vsize;
-		while (end - addr >= RUST_VTABLE_HEADER_SLOTS * context.word_size) {
+		ut64 addr = RZ_ROUND(sec_vaddr, context.word_size);
+		ut64 end = sec_vaddr + section->vsize;
+		while (addr < end && end - addr >= RUST_VTABLE_HEADER_SLOTS * context.word_size) {
 			if (rz_interrupt_is_breaked(analysis->intr)) {
 				break;
 			}
 			RzAnalysisVTable vtable = { .addr = addr };
-			RzVector *methods = parse_rust_vtable(&context, &vtable, end);
+			RzVector *methods = parse_rust_vtable(&context, &vtable, end, allow_fallback);
 			if (methods) {
+				found_named = true;
 				apply_rust_vtable(&context, &vtable, methods);
 				rz_vector_free(methods);
 			}
 			addr += context.word_size;
+		}
+	}
+	if (!found_named && !rz_interrupt_is_breaked(analysis->intr)) {
+		rz_pvector_foreach (sections, iter) {
+			if (rz_interrupt_is_breaked(analysis->intr)) {
+				break;
+			}
+			section = *iter;
+			if (!section_can_contain_vtables(section, allow_fallback)) {
+				continue;
+			}
+			ut64 sec_vaddr = rz_bin_object_addr_with_base(obj, section->vaddr);
+			if (section->vsize < RUST_VTABLE_HEADER_SLOTS * context.word_size ||
+				section->vsize > UT64_MAX - sec_vaddr) {
+				continue;
+			}
+
+			ut64 addr = RZ_ROUND(sec_vaddr, context.word_size);
+			ut64 end = sec_vaddr + section->vsize;
+			while (addr < end && end - addr >= RUST_VTABLE_HEADER_SLOTS * context.word_size) {
+				if (rz_interrupt_is_breaked(analysis->intr)) {
+					break;
+				}
+				RzAnalysisVTable vtable = { .addr = addr };
+				RzVector *methods = parse_rust_vtable_anon(
+					&context, &vtable, end, allow_fallback);
+				if (methods) {
+					ut64 step = RZ_MAX(vtable.size, (ut64)context.word_size);
+					apply_rust_vtable(&context, &vtable, methods);
+					rz_vector_free(methods);
+					if (step > end - addr) {
+						break;
+					}
+					addr += step;
+				} else {
+					addr += context.word_size;
+				}
+			}
 		}
 	}
 	rz_interrupt_break_pop(analysis->intr);
