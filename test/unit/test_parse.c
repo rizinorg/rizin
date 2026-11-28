@@ -279,6 +279,59 @@ bool test_rz_parse_filter_plain_varname_hex_tail_not_number(void) {
 	mu_end;
 }
 
+bool test_rz_parse_filter_maxflagnamelen_lea_no_oob(void) {
+	FilterSubstCtx ctx;
+	mu_assert_true(filter_subst_ctx_init(&ctx), "ctx init");
+
+	const char *long_name = "sym.very_long_namespace::inner::leaf";
+	mu_assert_notnull(rz_flag_set(ctx.flags, long_name, 0x9000, 1),
+		"set long flag at 0x9000");
+	ctx.p->subrel = true;
+	ctx.p->subrel_addr = 0x9000;
+	ctx.p->maxflagnamelen = 16;
+
+	char *data = rz_str_dup("lea rax, qword [0x9000]");
+	const int len = 40;
+	char *str = malloc(len);
+	mu_assert_notnull(str, "malloc");
+	memset(str, 0xff, len);
+
+	rz_parse_filter(ctx.p, 0x1000, ctx.flags, NULL, data, str, len, false);
+	mu_assert_streq(str, "lea rax, qword (cxx)::leaf",
+		"shortened lea flag strips brackets using actual shortened length");
+
+	free(str);
+	free(data);
+	filter_subst_ctx_fini(&ctx);
+	mu_end;
+}
+
+bool test_rz_parse_filter_lea_truncated_output_no_oob(void) {
+	FilterSubstCtx ctx;
+	mu_assert_true(filter_subst_ctx_init(&ctx), "ctx init");
+
+	const char *long_name = "sym.very_long_namespace_symbol_without_delimiters";
+	mu_assert_notnull(rz_flag_set(ctx.flags, long_name, 0x9000, 1),
+		"set long flag at 0x9000");
+	ctx.p->subrel = true;
+	ctx.p->subrel_addr = 0x9000;
+
+	char *data = rz_str_dup("lea rax, qword [0x9000]");
+	const int len = 24;
+	char *str = malloc(len);
+	mu_assert_notnull(str, "malloc");
+	memset(str, 0xff, len);
+
+	rz_parse_filter(ctx.p, 0x1000, ctx.flags, NULL, data, str, len, false);
+	mu_assert_eq(strlen(str), (size_t)(len - 1),
+		"truncated lea output stays bounded within buffer");
+
+	free(str);
+	free(data);
+	filter_subst_ctx_fini(&ctx);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_parse_filter_ansi_truncation_no_partial_escape);
 	mu_run_test(test_rz_parse_filter_ansi_truncation_realistic_symbol);
@@ -286,6 +339,8 @@ int all_tests() {
 	mu_run_test(test_rz_parse_filter_ansi_number_substituted);
 	mu_run_test(test_rz_parse_filter_ansi_varname_hex_tail_not_number);
 	mu_run_test(test_rz_parse_filter_plain_varname_hex_tail_not_number);
+	mu_run_test(test_rz_parse_filter_maxflagnamelen_lea_no_oob);
+	mu_run_test(test_rz_parse_filter_lea_truncated_output_no_oob);
 	return tests_passed != tests_run;
 }
 
