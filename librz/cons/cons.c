@@ -1412,6 +1412,18 @@ static bool __pty_get_size(RzCons *cons) {
 #endif
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
+#if !__WINDOWS__ && !EMSCRIPTEN
+static int cons_env_columns(void) {
+	char *str = rz_sys_getenv("COLUMNS");
+	if (!str) {
+		return 80;
+	}
+	int cols = atoi(str);
+	free(str);
+	return cols > 0 ? cols : 80;
+}
+#endif
+
 RZ_API int rz_cons_get_size(RZ_NONNULL RZ_BORROW RzCons *cons, int *rows) {
 #if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -1450,19 +1462,12 @@ RZ_API int rz_cons_get_size(RZ_NONNULL RZ_BORROW RzCons *cons, int *rows) {
 		cons->columns = win.ws_col;
 		cons->rows = win.ws_row;
 	} else {
-		cons->columns = 80;
+		cons->columns = cons_env_columns();
 		cons->rows = 23;
 	}
 #else
-	char *str = rz_sys_getenv("COLUMNS");
-	if (str) {
-		cons->columns = atoi(str);
-		cons->rows = 23; // XXX. windows must get console size
-		free(str);
-	} else {
-		cons->columns = 80;
-		cons->rows = 23;
-	}
+	cons->columns = cons_env_columns();
+	cons->rows = 23; // XXX. windows must get console size
 #endif
 #if SIMULATE_ADB_SHELL
 	cons->rows = 0;
