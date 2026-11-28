@@ -3580,7 +3580,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
 
 	rz_config_add_integer_bind(cfg, "scr.color", "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)", core_scr_color_get, core_scr_color_set, NULL, core);
-	rz_config_set_i(cfg, "scr.color", (core->print->flags & RZ_PRINT_FLAGS_COLOR) ? COLOR_MODE_16 : COLOR_MODE_DISABLED);
+	// Honor native RZ_COLOR (matching rz-bin, rz-diff, rz-find, and rz-test).
+	ut64 default_color = (core->print->flags & RZ_PRINT_FLAGS_COLOR) ? COLOR_MODE_16 : COLOR_MODE_DISABLED;
+	rz_config_set_i(cfg, "scr.color", rz_sys_getenv_as_unsigned("RZ_COLOR", default_color));
 
 	SETCB("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETBPREF("scr.color.pipe", "false", "Enable colors when using pipes");

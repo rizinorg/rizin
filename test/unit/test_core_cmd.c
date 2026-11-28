@@ -595,6 +595,46 @@ static bool test_type_and_signature_cmd_status(void) {
 	mu_end;
 }
 
+static bool test_rz_color_env(void) {
+	char *orig = rz_sys_getenv("RZ_COLOR");
+
+	rz_sys_setenv("RZ_COLOR", NULL);
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core unset RZ_COLOR");
+	mu_assert_eq(rz_config_get_i(core->config, "scr.color"), COLOR_MODE_16, "unset RZ_COLOR enables color");
+	mu_assert_true((core->print->flags & RZ_PRINT_FLAGS_COLOR) != 0, "unset RZ_COLOR sets print color flag");
+	rz_core_free(core);
+
+	rz_sys_setenv("RZ_COLOR", "");
+	core = rz_core_new();
+	mu_assert_notnull(core, "core empty RZ_COLOR");
+	mu_assert_eq(rz_config_get_i(core->config, "scr.color"), COLOR_MODE_16, "empty RZ_COLOR leaves color enabled");
+	rz_core_free(core);
+
+	rz_sys_setenv("RZ_COLOR", "0");
+	core = rz_core_new();
+	mu_assert_notnull(core, "core RZ_COLOR=0");
+	mu_assert_eq(rz_config_get_i(core->config, "scr.color"), COLOR_MODE_DISABLED, "RZ_COLOR=0 disables color");
+	mu_assert_true((core->print->flags & RZ_PRINT_FLAGS_COLOR) == 0, "RZ_COLOR=0 clears print color flag");
+	rz_core_free(core);
+
+	rz_sys_setenv("RZ_COLOR", "2");
+	core = rz_core_new();
+	mu_assert_notnull(core, "core RZ_COLOR=2");
+	mu_assert_eq(rz_config_get_i(core->config, "scr.color"), COLOR_MODE_256, "RZ_COLOR=2 sets 256-color mode");
+	rz_core_free(core);
+
+	rz_sys_setenv("RZ_COLOR", "3");
+	core = rz_core_new();
+	mu_assert_notnull(core, "core RZ_COLOR=3");
+	mu_assert_eq(rz_config_get_i(core->config, "scr.color"), COLOR_MODE_16M, "RZ_COLOR=3 sets truecolor mode");
+	rz_core_free(core);
+
+	rz_sys_setenv("RZ_COLOR", orig);
+	free(orig);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_visual_function_preview);
 	mu_run_test(test_visual_preview_cache);
@@ -611,6 +651,7 @@ int all_tests() {
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
 	mu_run_test(test_type_and_signature_cmd_status);
+	mu_run_test(test_rz_color_env);
 	return tests_passed != tests_run;
 }
 
