@@ -351,6 +351,59 @@ bool test_rz_bin_p2v2p(void) {
 	mu_end;
 }
 
+bool test_rz_bin_pyc_cache_and_destroy(void) {
+	RzBin *bin = rz_bin_new();
+	mu_assert_notnull(bin, "rz_bin_new pyc");
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new pyc");
+	rz_io_bind(io, &bin->iob);
+
+	static const struct {
+		const char *path;
+		bool expect_strings;
+	} pyc_bins[] = {
+		{ "bins/pyc/py310.pyc", true },
+		{ "bins/pyc/py27.pyc", false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(pyc_bins); i++) {
+		RzBinOptions opt = { 0 };
+		rz_bin_options_init(&opt, 0, 0, 0, false);
+		RzBinFile *bf = rz_bin_open(bin, pyc_bins[i].path, &opt);
+		mu_assert_notnull(bf, "open pyc testbin");
+		mu_assert_notnull(bf->o, "pyc bin object");
+		mu_assert_streq(bf->o->plugin->name, "pyc", "pyc plugin selected");
+
+		const RzPVector *strs = rz_bin_object_get_strings(bf->o);
+		mu_assert_notnull(strs, "pyc strings present");
+		if (pyc_bins[i].expect_strings) {
+			mu_assert_true(rz_pvector_len(strs) > 0, "pyc strings non-empty");
+		} else {
+			mu_assert_eq(rz_pvector_len(strs), 0, "py27 strings empty");
+		}
+
+		// Re-invoke plugin->strings() to verify deep-copy ownership from strings_cache
+		RzPVector *cloned = bf->o->plugin->strings(bf);
+		mu_assert_notnull(cloned, "pyc strings re-cloned");
+		mu_assert_eq(rz_pvector_len(cloned), rz_pvector_len(strs), "cloned strings count matches");
+		rz_pvector_free(cloned);
+
+		// Verify destroy() clears bin_obj and is idempotent, and strings() handles NULL bin_obj/cache
+		bf->o->plugin->destroy(bf);
+		mu_assert_null(bf->o->bin_obj, "bin_obj cleared after destroy");
+		mu_assert_null(bf->o->plugin->strings(bf), "strings returns NULL when bin_obj is NULL");
+		bf->o->plugin->destroy(bf);
+
+		// Re-run load_buffer() without entries() so pyc != NULL && pyc->strings_cache == NULL
+		mu_assert_true(bf->o->plugin->load_buffer(bf, bf->o, bf->buf, bf->o->kv), "reload pyc without cache");
+		mu_assert_null(bf->o->plugin->strings(bf), "strings returns NULL when strings_cache is NULL");
+		rz_bin_file_delete(bin, bf);
+	}
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bin);
 	mu_run_test(test_rz_bin_reloc_storage);
@@ -358,6 +411,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bin_file_delete_all);
 	mu_run_test(test_rz_bin_sections_mapping);
 	mu_run_test(test_rz_bin_p2v2p);
+	mu_run_test(test_rz_bin_pyc_cache_and_destroy);
 	return tests_passed != tests_run;
 }
 

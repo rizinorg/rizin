@@ -476,6 +476,7 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (!add_string_to_cache(pyc, addr, ret->data, n, (ut32)rz_utf8_strlen(ret->data), RZ_STRING_ENC_UTF8)) {
+		free(ret->data);
 		RZ_FREE(ret);
 		return NULL;
 	}
@@ -781,60 +782,75 @@ static void free_object(pyc_object *object) {
 	switch (object->type) {
 	case TYPE_SMALL_TUPLE:
 	case TYPE_TUPLE:
+	case TYPE_LIST:
+	case TYPE_SET:
+	case TYPE_FROZENSET:
+	case TYPE_DICT:
+	case TYPE_SLICE:
 		rz_list_free(object->data);
 		break;
 	case TYPE_STRING:
 	case TYPE_TRUE:
 	case TYPE_FALSE:
 	case TYPE_INT:
+	case TYPE_INT64:
+	case TYPE_LONG:
+	case TYPE_FLOAT:
+	case TYPE_BINARY_FLOAT:
+	case TYPE_COMPLEX:
+	case TYPE_BINARY_COMPLEX:
 	case TYPE_NONE:
 	case TYPE_NULL:
 	case TYPE_ASCII_INTERNED:
 	case TYPE_SHORT_ASCII:
 	case TYPE_ASCII:
 	case TYPE_SHORT_ASCII_INTERNED:
+	case TYPE_UNICODE:
 		free(object->data);
 		break;
 	case TYPE_CODE_v0:
 	case TYPE_CODE_v1: {
 		pyc_code_object *cobj = object->data;
-		free_object(cobj->code);
-		free_object(cobj->consts);
-		free_object(cobj->names);
-		free_object(cobj->varnames);
-		free_object(cobj->freevars);
-		free_object(cobj->cellvars);
-		free_object(cobj->filename);
-		free_object(cobj->name);
-		free_object(cobj->lnotab);
-		free(object->data);
+		if (cobj) {
+			free_object(cobj->code);
+			free_object(cobj->consts);
+			free_object(cobj->names);
+			free_object(cobj->varnames);
+			free_object(cobj->freevars);
+			free_object(cobj->cellvars);
+			free_object(cobj->filename);
+			free_object(cobj->name);
+			free_object(cobj->lnotab);
+			free_object(cobj->localsplusnames);
+			free_object(cobj->localspluskinds);
+			free_object(cobj->qualname);
+			free_object(cobj->exceptiontable);
+			free(cobj);
+		}
 	} break;
 	case TYPE_REF:
 		free_object(object->data);
 		break;
-	case TYPE_SET:
-	case TYPE_FROZENSET:
+	case TYPE_INTERNED:
+	case TYPE_STRINGREF:
 	case TYPE_ELLIPSIS:
 	case TYPE_STOPITER:
-	case TYPE_BINARY_COMPLEX:
-	case TYPE_BINARY_FLOAT:
-	case TYPE_COMPLEX:
-	case TYPE_STRINGREF:
-	case TYPE_DICT:
-	case TYPE_FLOAT:
-	case TYPE_INT64:
-	case TYPE_INTERNED:
-	case TYPE_LIST:
-	case TYPE_LONG:
-	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
-		RZ_LOG_ERROR("Free not implemented for type %x\n", object->type);
 		break;
 	default:
 		RZ_LOG_ERROR("Undefined type in free_object (%x)\n", object->type);
 		break;
 	}
 	free(object);
+}
+
+/**
+ * \brief Recursively frees a marshaled Python object and its owned data.
+ *
+ * \param object The marshaled pyc_object to free, or NULL.
+ */
+void pyc_object_free(pyc_object *object) {
+	free_object(object);
 }
 
 static pyc_object *copy_object(pyc_object *object) {
@@ -993,7 +1009,7 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		return NULL;
 	}
 
-	// ret->type = TYPE_CODE_v1;
+	ret->type = TYPE_CODE_v1;
 	//  support start from v1.0
 	ret->data = cobj;
 
@@ -1276,9 +1292,15 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		break;
 	case TYPE_STOPITER:
 		ret = RZ_NEW0(pyc_object);
+		if (ret) {
+			ret->type = TYPE_STOPITER;
+		}
 		break;
 	case TYPE_ELLIPSIS:
 		ret = RZ_NEW0(pyc_object);
+		if (ret) {
+			ret->type = TYPE_ELLIPSIS;
+		}
 		break;
 	case TYPE_SLICE:
 		ret = get_slice_object(pyc, buffer);
@@ -1378,7 +1400,10 @@ bool get_sections_symbols_from_code_objects(RzBinPycObj *pyc, RzBuffer *buffer, 
 	if (!pyc->refs) {
 		return false;
 	}
-	ret = extract_sections_symbols(pyc, get_object(pyc, buffer), sections, symbols, cobjs, NULL);
+	free_object(pyc->root_obj);
+	pyc->root_obj = get_object(pyc, buffer);
+	ret = extract_sections_symbols(pyc, pyc->root_obj, sections, symbols, cobjs, NULL);
 	rz_list_free(pyc->refs);
+	pyc->refs = NULL;
 	return ret;
 }

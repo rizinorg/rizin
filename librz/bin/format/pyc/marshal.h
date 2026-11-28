@@ -93,11 +93,13 @@ typedef struct pyc_context {
 	RzPVector /*<RzBinSymbol *>*/ *symbols_cache;
 	RzList /*<RzList<void *> *>*/ *shared;
 	RzList /*<pyc_object *>*/ *refs; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
+	pyc_object *root_obj;
 	ut32 magic_int;
 	ut32 symbols_ordinal;
 } RzBinPycObj;
 
 bool get_sections_symbols_from_code_objects(RzBinPycObj *pyc, RzBuffer *buffer, RzPVector /*<RzBinSection *>*/ *sections, RzPVector /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *objs, ut32 magic);
 ut64 get_code_object_addr(RzBinPycObj *pyc, RzBuffer *buffer, ut32 magic);
+void pyc_object_free(pyc_object *object);
 
 #endif
