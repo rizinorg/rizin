@@ -686,25 +686,76 @@ invalid:
 }
 
 /**
+ * Check that one "||" alternative describes a valid range: either a single
+ * equality, or a lower bound (>, >=) together with an upper bound (<, <=).
+ */
+static bool or_alternative_is_valid(RzVector /*<RzTypeConstraint>*/ *group) {
+	bool has_eq = false;
+	bool has_low = false;
+	bool has_high = false;
+	RzTypeConstraint *c;
+	rz_vector_foreach (group, c) {
+		switch (c->cond) {
+		case RZ_TYPE_COND_EQ: has_eq = true; break;
+		case RZ_TYPE_COND_GT:
+		case RZ_TYPE_COND_GE: has_low = true; break;
+		case RZ_TYPE_COND_LT:
+		case RZ_TYPE_COND_LE: has_high = true; break;
+		default: return false;
+		}
+	}
+	if (has_eq) {
+		return rz_vector_len(group) == 1;
+	}
+	return has_low && has_high;
+}
+
+/**
  * \brief Parse a textual list of interval constraints into \p constraints
  *
  * This is the inverse of \ref rz_type_interval_constraints_as_string. The input
  * is a comma-separated list of comparisons, each one of the operators ==, !=,
  * <, <=, >, >= (in symbol form like ">=10" or mnemonic form like "ge 10", as
- * accepted by \ref rz_type_cond_fromstring) followed by a value. Values are
- * evaluated with \ref rz_num_math without a number environment, so they must be
- * literals or constant expressions. Any other operator makes the whole parse
- * fail. Note that while "== x" round-trips through
- * \ref rz_type_interval_constraints_as_string as the degenerate interval
- * [x, x], the inequality "!= x" is stored but is not part of the interval
- * rendering, as it does not describe a range.
+ * accepted by \ref rz_type_cond_fromstring) followed by a value. Alternatives
+ * joined by "||" are each parsed separately and must be an equality or a
+ * complete range. Values are evaluated with \ref rz_num_math without a number
+ * environment, so they must be literals or constant expressions. Any other
+ * operator makes the whole parse fail.
  *
- * \param str the textual constraints, e.g. ">0,<=9", "gt 0, le 9" or "== 5"
+ * \param str the textual constraints, e.g. ">0,<=9", "gt 0, le 9", "== 5"
+ *            or "gt 0, le 5 || gt 10, le 20"
  * \param constraints an initialized vector of \ref RzTypeConstraint to fill
  * \return true on success, false on a parse error (vector may be partially filled)
  */
 RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
 	rz_return_val_if_fail(str && constraints, false);
+
+	if (strstr(str, "||")) {
+		// Parse each "||" alternative separately and check that it is a
+		// complete range before adding it to the result.
+		RzList /*<char *>*/ *alts = rz_str_split_duplist(str, "||", true);
+		RzListIter *ait;
+		char *alt;
+		bool all_ok = true;
+		rz_list_foreach (alts, ait, alt) {
+			RzVector /*<RzTypeConstraint>*/ group;
+			rz_vector_init(&group, sizeof(RzTypeConstraint), NULL, NULL);
+			if (!rz_type_interval_constraints_from_string(alt, &group) || !or_alternative_is_valid(&group)) {
+				RZ_LOG_ERROR("Invalid alternative \"%s\": each '||' part must be an equality or a complete range (e.g. \"gt 0, le 5\")\n", alt);
+				rz_vector_fini(&group);
+				all_ok = false;
+				break;
+			}
+			RzTypeConstraint *c;
+			rz_vector_foreach (&group, c) {
+				rz_vector_push(constraints, c);
+			}
+			rz_vector_fini(&group);
+		}
+		rz_list_free(alts);
+		return all_ok;
+	}
+
 	// Group 1 is the operator (a run of <>!= symbols or a mnemonic such as
 	// "ge"), group 2 is the value. rz_type_cond_fromstring() then maps the
 	// operator and rejects anything that is not a comparison condition.
