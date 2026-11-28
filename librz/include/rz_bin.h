@@ -327,6 +327,7 @@ typedef struct rz_bin_file_load_options_t {
 } RzBinObjectLoadOptions;
 
 typedef struct rz_bin_string_database_t RzBinStrDb;
+typedef struct rz_bin_trycatch_index_t RzBinTrycatchIndex;
 
 typedef struct rz_bin_object_t {
 	RzBinObjectLoadOptions opts;
@@ -340,6 +341,7 @@ typedef struct rz_bin_object_t {
 	RzPVector /*<RzBinImport *>*/ *imports;
 	RzPVector /*<RzBinSymbol *>*/ *symbols;
 	RzPVector /*<RzBinTrycatch *>*/ *trycatch;
+	RzBinTrycatchIndex *trycatch_index;
 	RzPVector /*<RzBinResource *>*/ *resources;
 	/**
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
@@ -352,6 +354,8 @@ typedef struct rz_bin_object_t {
 	RzBinRelocStorage *relocs;
 	RzBinStrDb *strings;
 	RzPVector /*<RzBinClass *>*/ *classes;
+	bool classes_unsorted;
+	bool class_members_unsorted;
 	HtSP /*<char *, RzBinClass*>*/ *name_to_class_object;
 	HtSP /*<char *, RzBinSymbol*>*/ *glue_to_class_method;
 	HtSP /*<char *, RzBinClassField*>*/ *glue_to_class_field;
@@ -1023,9 +1027,12 @@ RZ_API ut64 rz_bin_get_size(RzBin *bin);
 RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt);
 RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzBinStringSearchOpt *opt);
 
+typedef bool (*RzBinTrycatchCb)(RZ_NONNULL RzBinTrycatch *tc, RZ_NULLABLE void *user);
+
 // use RzBinFile instead
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
 RZ_API RZ_BORROW RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
+RZ_API bool rz_bin_file_trycatch_foreach_at(RZ_NONNULL RzBinFile *bf, ut64 addr, bool exact_from, RZ_NONNULL RzBinTrycatchCb cb, RZ_NULLABLE void *user);
 
 RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);

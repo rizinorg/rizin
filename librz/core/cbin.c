@@ -1770,7 +1770,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
-	RzPVector *cs = o ? o->classes : NULL;
+	const RzPVector *cs = o ? rz_bin_object_get_classes(o) : NULL;
 	if (!cs) {
 		return false;
 	}

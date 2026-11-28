@@ -795,32 +795,53 @@ typedef struct rz_analysis_trycatch_ctx_t {
 	ut64 addr;
 	bool overlapped;
 	RzAnalysisBlock *bb;
+	bool found;
 } RzAnalysisTrycatchCtx;
+
+static bool add_trycatch_handler_cb(RZ_NONNULL RzBinTrycatch *tc, RZ_NULLABLE void *user) {
+	RzAnalysisTrycatchCtx *ctx = user;
+	if (!tc->handler) {
+		return true;
+	}
+	if (!ctx->overlapped && !ctx->found && ctx->bb) {
+		ctx->bb->jump = tc->handler;
+	}
+	rz_analysis_task_item_new(ctx->analysis, ctx->tasks, ctx->fcn, NULL, tc->handler, ctx->sp);
+	ctx->found = true;
+	return true;
+}
 
 static bool add_trycatch_handlers(RZ_NONNULL RzAnalysisTrycatchCtx *ctx) {
 	if (!ctx->analysis->binb.get_trycatch || !ctx->analysis->binb.bin) {
 		return false;
 	}
 
-	RzPVector *tcs = ctx->analysis->binb.get_trycatch(ctx->analysis->binb.bin);
-	if (!tcs) {
+	RzBinFile *bf = rz_bin_cur(ctx->analysis->binb.bin);
+	if (!bf || !bf->o) {
 		return false;
 	}
 
-	bool found = false;
-	void **it;
-	RzBinTrycatch *tc;
-	rz_pvector_foreach (tcs, it) {
-		tc = *it;
-		if (ctx->addr >= tc->from && ctx->addr < tc->to && tc->handler) {
-			if (!ctx->overlapped && !found && ctx->bb) {
-				ctx->bb->jump = tc->handler;
-			}
-			rz_analysis_task_item_new(ctx->analysis, ctx->tasks, ctx->fcn, NULL, tc->handler, ctx->sp);
-			found = true;
-		}
+	ctx->found = false;
+	rz_bin_file_trycatch_foreach_at(bf, ctx->addr, false, add_trycatch_handler_cb, ctx);
+	return ctx->found;
+}
+
+typedef struct rz_analysis_trycatch_op_ctx_t {
+	RzAnalysis *analysis;
+	RzVector /*<RzAnalysisTaskItem>*/ *tasks;
+	RzAnalysisFunction *fcn;
+	RzStackAddr sp;
+	ut64 op_addr;
+} RzAnalysisTrycatchOpCtx;
+
+static bool add_trycatch_op_cb(RZ_NONNULL RzBinTrycatch *tc, RZ_NULLABLE void *user) {
+	RzAnalysisTrycatchOpCtx *ctx = user;
+	if (tc->filter) {
+		rz_analysis_xrefs_set(ctx->analysis, ctx->op_addr, tc->filter, RZ_ANALYSIS_XREF_TYPE_CALL);
 	}
-	return found;
+	rz_analysis_xrefs_set(ctx->analysis, ctx->op_addr, tc->handler, RZ_ANALYSIS_XREF_TYPE_CODE);
+	rz_analysis_task_item_new(ctx->analysis, ctx->tasks, ctx->fcn, NULL, tc->handler, ctx->sp);
+	return true;
 }
 
 static inline bool is_x86_seh(RzAnalysis *analysis, bool is_x86, RzAnalysisOp *op, ut64 last_push_addr) {
@@ -983,6 +1004,17 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		maxlen = 0;
 	}
 
+	RzBinFile *tc_bf = NULL;
+	if (analysis->opt.trycatch && analysis->binb.get_trycatch && analysis->binb.bin) {
+		RzBinFile *cur_bf = rz_bin_cur(analysis->binb.bin);
+		if (cur_bf && cur_bf->o) {
+			RzPVector *tcs = rz_bin_file_get_trycatch(cur_bf);
+			if (tcs && !rz_pvector_empty(tcs)) {
+				tc_bf = cur_bf;
+			}
+		}
+	}
+
 	while (true) {
 		ut32 at_delta;
 		ut64 at;
@@ -1094,23 +1126,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			rz_analysis_block_set_size(bb, newbbsize);
 			fcn->ninstr++;
 		}
-		if (analysis->opt.trycatch && analysis->binb.get_trycatch) {
-			RzPVector *tcs = analysis->binb.get_trycatch(analysis->binb.bin);
-			if (tcs) {
-				void **it;
-				RzBinTrycatch *tc;
-				rz_pvector_foreach (tcs, it) {
-					tc = *it;
-					if (tc->from != at) {
-						continue;
-					}
-					if (tc->filter) {
-						rz_analysis_xrefs_set(analysis, op.addr, tc->filter, RZ_ANALYSIS_XREF_TYPE_CALL);
-					}
-					rz_analysis_xrefs_set(analysis, op.addr, tc->handler, RZ_ANALYSIS_XREF_TYPE_CODE);
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, tc->handler, sp);
-				}
-			}
+		if (tc_bf) {
+			RzAnalysisTrycatchOpCtx tc_ctx = { analysis, tasks, fcn, sp, op.addr };
+			rz_bin_file_trycatch_foreach_at(tc_bf, at, true, add_trycatch_op_cb, &tc_ctx);
 		}
 		idx += oplen;
 		delay.un_idx = idx;
@@ -1406,7 +1424,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 				}
 				if (analysis->opt.trycatch) {
-					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb };
+					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb, false };
 					if (add_trycatch_handlers(&ctx)) {
 						gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 					}
@@ -1575,7 +1593,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					f->is_noreturn = true;
 				}
 				if (analysis->opt.trycatch) {
-					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb };
+					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb, false };
 					if (add_trycatch_handlers(&ctx)) {
 						gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 					}
@@ -1595,7 +1613,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					f->is_noreturn = true;
 				}
 				if (analysis->opt.trycatch) {
-					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb };
+					RzAnalysisTrycatchCtx ctx = { analysis, tasks, fcn, sp, at, overlapped, bb, false };
 					if (add_trycatch_handlers(&ctx)) {
 						gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 					}

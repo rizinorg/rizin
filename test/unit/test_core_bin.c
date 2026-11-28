@@ -740,6 +740,329 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+typedef struct trycatch_collect_ctx_t {
+	ut64 handlers[64];
+	size_t count;
+	size_t stop_after;
+} TrycatchCollectCtx;
+
+static bool collect_trycatch_cb(RZ_NONNULL RzBinTrycatch *tc, RZ_NULLABLE void *user) {
+	TrycatchCollectCtx *ctx = user;
+	if (ctx->count < RZ_ARRAY_SIZE(ctx->handlers)) {
+		ctx->handlers[ctx->count++] = tc->handler;
+	}
+	if (ctx->stop_after && ctx->count >= ctx->stop_after) {
+		return false;
+	}
+	return true;
+}
+
+bool test_bin_classes_lazy_sort(void) {
+	RzCore *core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "binfile");
+	RzBinObject *o = bf->o;
+
+	mu_assert_null(rz_bin_object_find_class(o, "Missing"), "missing class returns NULL");
+
+	mu_assert_notnull(rz_bin_object_add_class(o, "Zeta", NULL, 0x300), "add Zeta");
+	mu_assert_notnull(rz_bin_object_add_class(o, "Alpha", NULL, 0x100), "add Alpha");
+	mu_assert_notnull(rz_bin_object_add_class(o, "Mid", NULL, 0x200), "add Mid");
+	RzBinClass *empty = rz_bin_object_add_class(o, "Empty", NULL, 0x150);
+	mu_assert_notnull(empty, "add Empty");
+	rz_list_free(empty->methods);
+	empty->methods = NULL;
+	rz_list_free(empty->fields);
+	empty->fields = NULL;
+
+	mu_assert_notnull(rz_bin_object_add_method(o, "Alpha", "m2", 0x20, 0x120), "add m2");
+	mu_assert_notnull(rz_bin_object_add_method(o, "Alpha", "m1", 0x10, 0x110), "add m1");
+	mu_assert_notnull(rz_bin_object_add_field(o, "Alpha", "f2", 0x40, 0x140), "add f2");
+	mu_assert_notnull(rz_bin_object_add_field(o, "Alpha", "f1", 0x30, 0x130), "add f1");
+	mu_assert_notnull(rz_bin_object_add_method(o, "Mid", "mm2", 0x60, 0x220), "add Mid mm2");
+	mu_assert_notnull(rz_bin_object_add_method(o, "Mid", "mm1", 0x50, 0x210), "add Mid mm1");
+	mu_assert_notnull(rz_bin_object_add_field(o, "Mid", "mf2", 0x80, 0x240), "add Mid mf2");
+	mu_assert_notnull(rz_bin_object_add_field(o, "Mid", "mf1", 0x70, 0x230), "add Mid mf1");
+
+	mu_assert_ptreq(rz_bin_object_find_class(o, "Empty"), empty, "find class with NULL members");
+
+	RzBinClass *found = rz_bin_object_find_class(o, "Alpha");
+	mu_assert_notnull(found, "find Alpha");
+	mu_assert_eq(rz_list_length(found->methods), 2, "2 methods");
+	RzBinSymbol *m0 = rz_list_first_val(found->methods);
+	RzBinSymbol *m1 = rz_list_last_val(found->methods);
+	mu_assert_streq(m0->name, "m1", "first method sorted by vaddr");
+	mu_assert_streq(m1->name, "m2", "second method sorted by vaddr");
+	RzBinClassField *f0 = rz_list_first_val(found->fields);
+	RzBinClassField *f1 = rz_list_last_val(found->fields);
+	mu_assert_streq(f0->name, "f1", "first field sorted by vaddr");
+	mu_assert_streq(f1->name, "f2", "second field sorted by vaddr");
+
+	const RzPVector *classes = rz_bin_object_get_classes(o);
+	mu_assert_eq(rz_pvector_len(classes), 4, "4 classes");
+	RzBinClass *c0 = rz_pvector_at(classes, 0);
+	RzBinClass *c1 = rz_pvector_at(classes, 1);
+	RzBinClass *c2 = rz_pvector_at(classes, 2);
+	RzBinClass *c3 = rz_pvector_at(classes, 3);
+	mu_assert_streq(c0->name, "Alpha", "class 0 sorted");
+	mu_assert_streq(c1->name, "Empty", "class 1 sorted");
+	mu_assert_streq(c2->name, "Mid", "class 2 sorted");
+	mu_assert_streq(c3->name, "Zeta", "class 3 sorted");
+	mu_assert_eq(rz_list_length(c2->methods), 2, "Mid has 2 methods");
+	mu_assert_streq(((RzBinSymbol *)rz_list_first_val(c2->methods))->name, "mm1", "Mid first method sorted");
+	mu_assert_streq(((RzBinSymbol *)rz_list_last_val(c2->methods))->name, "mm2", "Mid second method sorted");
+	mu_assert_eq(rz_list_length(c2->fields), 2, "Mid has 2 fields");
+	mu_assert_streq(((RzBinClassField *)rz_list_first_val(c2->fields))->name, "mf1", "Mid first field sorted");
+	mu_assert_streq(((RzBinClassField *)rz_list_last_val(c2->fields))->name, "mf2", "Mid second field sorted");
+
+	// Second call when already sorted takes the clean fast path.
+	mu_assert_ptreq(rz_bin_object_get_classes(o), classes, "already sorted classes");
+
+	// Apply classes to core flags, and verify NULL bin object handling.
+	mu_assert_true(rz_core_bin_apply_classes(core, bf), "apply classes");
+	RzBinFile empty_bf = { 0 };
+	mu_assert_false(rz_core_bin_apply_classes(core, &empty_bf), "apply classes with NULL bin object");
+
+	// Demangle hook re-sorts classes if needed.
+	rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_ENABLE_ALL);
+
+	// NULL classes vector returns NULL cleanly.
+	RzPVector *saved_classes = o->classes;
+	o->classes = NULL;
+	mu_assert_null(rz_bin_object_get_classes(o), "NULL classes vector");
+	o->classes = saved_classes;
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_bin_trycatch_index(void) {
+	RzCore *core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	RzPVector *tcs = rz_bin_file_get_trycatch(bf);
+	mu_assert_notnull(tcs, "trycatch vector");
+
+	// Empty query succeeds with 0 matches.
+	TrycatchCollectCtx ctx = { 0 };
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1050, false, collect_trycatch_cb, &ctx), "empty query");
+	mu_assert_eq(ctx.count, 0, "no matches");
+
+	// Mirror Windows SEH inner-before-outer ordering:
+	// idx 0: inner [0x104c, 0x1066) -> handler 0x1066
+	// idx 1: outer [0x1022, 0x1076) -> handler 0x1076
+	// idx 2: same-from [0x104c, 0x1060) -> handler 0x1060
+	// idx 3: disjoint [0x2000, 0x2050) -> handler 0x2050
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1010, 0x104c, 0x1066, 0x1066, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1010, 0x1022, 0x1076, 0x1076, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1010, 0x104c, 0x1060, 0x1060, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x2000, 0x2000, 0x2050, 0x2050, 0));
+
+	// Exact from match at 0x104c returns idx 0 then idx 2.
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x104c, true, collect_trycatch_cb, &ctx), "exact 0x104c");
+	mu_assert_eq(ctx.count, 2, "2 exact matches");
+	mu_assert_eq(ctx.handlers[0], 0x1066, "exact match 0");
+	mu_assert_eq(ctx.handlers[1], 0x1060, "exact match 1");
+
+	// Exact from match at last entry (0x2000), miss in middle (0x1050), and past end (0x9000).
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x2000, true, collect_trycatch_cb, &ctx), "exact last entry");
+	mu_assert_eq(ctx.count, 1, "1 exact match at last entry");
+	mu_assert_eq(ctx.handlers[0], 0x2050, "last entry handler");
+
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1050, true, collect_trycatch_cb, &ctx), "exact middle miss");
+	mu_assert_eq(ctx.count, 0, "0 exact matches in middle");
+
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x9000, true, collect_trycatch_cb, &ctx), "exact past end");
+	mu_assert_eq(ctx.count, 0, "0 exact matches past end");
+
+	// Early stop on exact match.
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.stop_after = 1;
+	mu_assert_false(rz_bin_file_trycatch_foreach_at(bf, 0x104c, true, collect_trycatch_cb, &ctx), "exact early stop");
+	mu_assert_eq(ctx.count, 1, "stopped after 1");
+
+	// Range match at 0x1050 preserves original order: idx 0, idx 1, idx 2.
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1050, false, collect_trycatch_cb, &ctx), "range 0x1050");
+	mu_assert_eq(ctx.count, 3, "3 range matches");
+	mu_assert_eq(ctx.handlers[0], 0x1066, "inner handler first");
+	mu_assert_eq(ctx.handlers[1], 0x1076, "outer handler second");
+	mu_assert_eq(ctx.handlers[2], 0x1060, "third handler third");
+
+	// Early stop on range match.
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.stop_after = 1;
+	mu_assert_false(rz_bin_file_trycatch_foreach_at(bf, 0x1050, false, collect_trycatch_cb, &ctx), "range early stop");
+	mu_assert_eq(ctx.count, 1, "range stopped after 1");
+
+	// Range match at 0x1070 skips ended inner intervals (addr >= tc->to) while matching outer [0x1022, 0x1076).
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1070, false, collect_trycatch_cb, &ctx), "range 0x1070");
+	mu_assert_eq(ctx.count, 1, "1 match at 0x1070");
+	mu_assert_eq(ctx.handlers[0], 0x1076, "outer handler after ended inner");
+
+	// Range match inside outer only (0x1030), before all (0x500), and miss between intervals (0x1500).
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1030, false, collect_trycatch_cb, &ctx), "range 0x1030");
+	mu_assert_eq(ctx.count, 1, "1 match at 0x1030");
+	mu_assert_eq(ctx.handlers[0], 0x1076, "outer handler");
+
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x500, false, collect_trycatch_cb, &ctx), "range before all");
+	mu_assert_eq(ctx.count, 0, "0 matches before all");
+
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1500, false, collect_trycatch_cb, &ctx), "range miss");
+	mu_assert_eq(ctx.count, 0, "0 matches at 0x1500");
+
+	// >32 overlapping records exercises both malloc (16->32) and realloc (32->64) plus qsort restoration.
+	for (ut64 i = 0; i < 36; i++) {
+		rz_pvector_push(tcs, rz_bin_trycatch_new(0x3000, 0x3000 + (35 - i), 0x3100, 0x4000 + i, 0));
+	}
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x3050, false, collect_trycatch_cb, &ctx), "36 overlapping");
+	mu_assert_eq(ctx.count, 36, "all 36 matches");
+	mu_assert_eq(ctx.handlers[0], 0x4000, "orig_idx 0 preserved after qsort");
+	mu_assert_eq(ctx.handlers[35], 0x4023, "orig_idx 35 preserved after qsort");
+
+	// Early stop on heap-allocated match list frees buffer cleanly.
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.stop_after = 2;
+	mu_assert_false(rz_bin_file_trycatch_foreach_at(bf, 0x3050, false, collect_trycatch_cb, &ctx), "heap early stop");
+	mu_assert_eq(ctx.count, 2, "heap stopped after 2");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_analysis_trycatch_handlers(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	rz_config_set_b(core->config, "analysis.trycatch", true);
+	rz_config_set_b(core->config, "analysis.nopskip", false);
+
+	RzIODesc *code_desc = rz_io_open_at(core->io, "malloc://0x200", RZ_PERM_RWX, 0, 0x1000, NULL);
+	mu_assert_notnull(code_desc, "open code buffer");
+
+	// 0x1000: nop; call 0x1080 (noreturn CALL)
+	const ut8 fcn_call[] = { 0x90, 0xe8, 0x7a, 0x00, 0x00, 0x00 };
+	// 0x1010: nop; call 0x1080 (for overlapped block analysis)
+	const ut8 fcn_ovlp[] = { 0x90, 0xe8, 0x6a, 0x00, 0x00, 0x00 };
+	// 0x1020: jmp 0x1080 (noreturn JMP)
+	const ut8 fcn_jmp[] = { 0xe9, 0x5b, 0x00, 0x00, 0x00 };
+	// 0x1030: call qword [rip + 0x4a] -> 0x1036 + 0x4a = 0x1080 (noreturn UCALL)
+	const ut8 fcn_ucall[] = { 0xff, 0x15, 0x4a, 0x00, 0x00, 0x00 };
+	const ut8 ret_op[] = { 0xc3 };
+	rz_io_write_at(core->io, 0x1000, fcn_call, sizeof(fcn_call));
+	rz_io_write_at(core->io, 0x1010, fcn_ovlp, sizeof(fcn_ovlp));
+	rz_io_write_at(core->io, 0x1020, fcn_jmp, sizeof(fcn_jmp));
+	rz_io_write_at(core->io, 0x1030, fcn_ucall, sizeof(fcn_ucall));
+	rz_io_write_at(core->io, 0x1040, ret_op, sizeof(ret_op));
+	rz_io_write_at(core->io, 0x1050, ret_op, sizeof(ret_op));
+	rz_io_write_at(core->io, 0x1060, ret_op, sizeof(ret_op));
+	rz_io_write_at(core->io, 0x1080, ret_op, sizeof(ret_op));
+	rz_analysis_noreturn_add(core->analysis, NULL, 0x1080);
+
+	// 1. No current binfile: analysis succeeds without trycatch handlers.
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn without binfile");
+	rz_analysis_function_delete(fcn);
+
+	// 2. Loaded binfile with empty trycatch vector.
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open mock bin");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load mock bin");
+
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn with empty trycatch");
+	rz_analysis_function_delete(fcn);
+
+	// 3. Loaded binfile with temporarily NULL bf->o.
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	RzBinObject *saved_o = bf->o;
+	bf->o = NULL;
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn with NULL bf->o");
+	rz_analysis_function_delete(fcn);
+	bf->o = saved_o;
+
+	// 4. Populate trycatch records covering zero-handler, filter+handler, second handler, JMP, UCALL, and overlap.
+	RzPVector *tcs = rz_bin_file_get_trycatch(bf);
+	mu_assert_notnull(tcs, "trycatch vector");
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1000, 0x1000, 0x1008, 0, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1000, 0x1000, 0x1008, 0x1040, 0x1060));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1000, 0x1000, 0x1008, 0x1050, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1010, 0x1010, 0x1018, 0x1040, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1020, 0x1020, 0x1028, 0x1040, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1030, 0x1030, 0x1038, 0x1040, 0));
+
+	// Noreturn CALL at 0x1001 with op-start trycatch at 0x1000.
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn at 0x1000");
+	RzAnalysisBlock *bb0 = rz_analysis_get_block_at(core->analysis, 0x1000);
+	mu_assert_notnull(bb0, "bb at 0x1000");
+	mu_assert_eq(bb0->jump, 0x1040, "first non-zero handler sets bb->jump");
+	mu_assert_notnull(rz_analysis_get_block_at(core->analysis, 0x1040), "handler1 block analyzed");
+	mu_assert_notnull(rz_analysis_get_block_at(core->analysis, 0x1050), "handler2 block analyzed");
+	RzList *xrefs = rz_analysis_xrefs_get_from(core->analysis, 0x1000);
+	mu_assert_notnull(xrefs, "xrefs from 0x1000");
+	mu_assert_true(rz_list_length(xrefs) >= 2, "filter and handler xrefs created");
+	rz_list_free(xrefs);
+
+	// Overlapped block hitting noreturn CALL at 0x1011.
+	rz_core_analysis_fcn(core, 0x1011, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	rz_core_analysis_fcn(core, 0x1010, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	mu_assert_notnull(rz_analysis_get_function_at(core->analysis, 0x1010), "overlapped fcn at 0x1010");
+
+	// Noreturn JMP at 0x1020.
+	rz_core_analysis_fcn(core, 0x1020, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	RzAnalysisBlock *bb_jmp = rz_analysis_get_block_at(core->analysis, 0x1020);
+	mu_assert_notnull(bb_jmp, "bb at 0x1020");
+	mu_assert_eq(bb_jmp->jump, 0x1040, "noreturn jmp routes to trycatch handler");
+
+	// Noreturn UCALL at 0x1030.
+	rz_core_analysis_fcn(core, 0x1030, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	RzAnalysisBlock *bb_ucall = rz_analysis_get_block_at(core->analysis, 0x1030);
+	mu_assert_notnull(bb_ucall, "bb at 0x1030");
+	mu_assert_eq(bb_ucall->jump, 0x1040, "noreturn ucall routes to trycatch handler");
+
+	// Missing bin binding (binb.bin == NULL and binb.get_trycatch == NULL) skips trycatch cleanly.
+	rz_analysis_function_delete_address(core->analysis, 0x1020);
+	RzBinBind *binb = rz_analysis_get_bin_bind(core->analysis);
+	RzBin *saved_bin = binb->bin;
+	binb->bin = NULL;
+	rz_core_analysis_fcn(core, 0x1020, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	binb->bin = saved_bin;
+	rz_analysis_function_delete_address(core->analysis, 0x1020);
+	RzBinGetTrycatch saved_get_tc = binb->get_trycatch;
+	binb->get_trycatch = NULL;
+	rz_core_analysis_fcn(core, 0x1020, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	binb->get_trycatch = saved_get_tc;
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +1074,9 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_classes_lazy_sort);
+	mu_run_test(test_bin_trycatch_index);
+	mu_run_test(test_analysis_trycatch_handlers);
 	return tests_passed != tests_run;
 }
 

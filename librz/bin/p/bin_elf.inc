@@ -1098,43 +1098,41 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return relocs_obj(bin, bf->o->opts.baseaddr, bf->buf);
 }
 
-static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
-	RzPVector *symbols_vec = symbols(bf);
-	void **iter;
-	RzBinSymbol *symbol;
-	if (!symbols_vec) {
-		return;
-	}
-
-	rz_pvector_foreach (symbols_vec, iter) {
-		symbol = *iter;
+static bool lookup_symbols_vec(const RzVector /*<RzBinElfSymbol>*/ *syms, RzBinInfo *ret) {
+	RzBinElfSymbol *symbol;
+	rz_vector_foreach (syms, symbol) {
+		if (RZ_STR_ISEMPTY(symbol->name)) {
+			continue;
+		}
 		if (!strcmp(symbol->name, "_NSConcreteGlobalBlock")) {
 			ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
 		} else if (!strcmp(symbol->name, "__rust_oom")) {
 			ret->lang = "rust";
-			break;
+			return true;
 		}
 	}
-	rz_pvector_free(symbols_vec);
+	return false;
 }
 
-static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
+static void lookup_symbols(ELFOBJ *bin, RzBinInfo *ret) {
+	if (lookup_symbols_vec(bin->symbols, ret)) {
+		return;
+	}
+	lookup_symbols_vec(bin->imports, ret);
+}
+
+static void lookup_sections(ELFOBJ *bin, RzBinInfo *ret) {
 	if (ret->has_retguard) {
 		return;
 	}
-	RzPVector *sections_vec = sections(bf);
-	void **iter;
-	RzBinSection *section;
-	rz_pvector_foreach (sections_vec, iter) {
-		section = *iter;
-#define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
-		if (!strcmp(section->name, ".openbsd.randomdata")) {
-			// The retguard cookie adds 8 per return function inst.
-			ret->has_retguard = (section->size >= RZ_BIN_RANDOMDATA_RETGUARD_SZ);
-			break;
-		}
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".openbsd.randomdata");
+	if (!section) {
+		return;
 	}
-	rz_pvector_free(sections_vec);
+#define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
+	ut64 size = section->type != SHT_NOBITS ? section->size : 0;
+	// The retguard cookie adds 8 per return function inst.
+	ret->has_retguard = (size >= RZ_BIN_RANDOMDATA_RETGUARD_SZ);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -1220,8 +1218,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (Elf_(rz_bin_elf_is_static)(obj)) {
 		ret->dbg_info |= RZ_BIN_DBG_STATIC;
 	}
-	lookup_sections(bf, ret);
-	lookup_symbols(bf, ret);
+	lookup_sections(obj, ret);
+	lookup_symbols(obj, ret);
 
 	return ret;
 }

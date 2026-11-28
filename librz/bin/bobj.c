@@ -207,6 +207,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_pvector_free(o->mem);
 	rz_pvector_free(o->sections);
 	rz_pvector_free(o->symbols);
+	rz_bin_trycatch_index_free(o->trycatch_index);
 	rz_pvector_free(o->trycatch);
 	rz_pvector_free(o->vfiles);
 	rz_pvector_free(o->resources);
@@ -215,6 +216,44 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	}
 	sdb_free(o->kv);
 	free(o);
+}
+
+static int bin_compare_method(RzBinSymbol *a, RzBinSymbol *b, void *user) {
+	return rz_bin_compare_method(a, b);
+}
+
+static int bin_compare_class(RzBinClass *a, RzBinClass *b, void *user) {
+	return rz_bin_compare_class(a, b);
+}
+
+static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void *user) {
+	return rz_bin_compare_class_field(a, b);
+}
+
+static void bin_class_sort_members(RzBinClass *c) {
+	if (c->methods && !c->methods->sorted) {
+		rz_list_sort(c->methods, (RzListComparator)bin_compare_method, NULL);
+	}
+	if (c->fields && !c->fields->sorted) {
+		rz_list_sort(c->fields, (RzListComparator)bin_compare_class_field, NULL);
+	}
+}
+
+static void bin_object_sort_classes(RzBinObject *o) {
+	if (!o->classes) {
+		return;
+	}
+	if (o->classes_unsorted) {
+		rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
+		o->classes_unsorted = false;
+	}
+	if (o->class_members_unsorted) {
+		void **it;
+		rz_pvector_foreach (o->classes, it) {
+			bin_class_sort_members(*it);
+		}
+		o->class_members_unsorted = false;
+	}
 }
 
 /**
@@ -227,7 +266,11 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
  */
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_find_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(o && name, NULL);
-	return ht_sp_find(o->name_to_class_object, name, NULL);
+	RzBinClass *c = ht_sp_find(o->name_to_class_object, name, NULL);
+	if (c) {
+		bin_class_sort_members(c);
+	}
+	return c;
 }
 
 static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *super, ut64 address) {
@@ -280,18 +323,6 @@ RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b) {
 	return 0;
 }
 
-static int bin_compare_method(RzBinSymbol *a, RzBinSymbol *b, void *user) {
-	return rz_bin_compare_method(a, b);
-}
-
-static int bin_compare_class(RzBinClass *a, RzBinClass *b, void *user) {
-	return rz_bin_compare_class(a, b);
-}
-
-static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void *user) {
-	return rz_bin_compare_class_field(a, b);
-}
-
 /**
  * \brief      Tries to add a new class unless its name is found and returns it.
  *
@@ -322,7 +353,7 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 	}
 
 	rz_pvector_push(o->classes, oclass);
-	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
+	o->classes_unsorted = true;
 	ht_sp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }
@@ -401,10 +432,8 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 	}
 	symbol->classname = rz_str_dup(klass);
 
-	if (!c->methods->sorted) {
-		rz_list_sort(c->methods, (RzListComparator)bin_compare_method, NULL);
-	}
-	rz_list_add_sorted(c->methods, symbol, (RzListComparator)bin_compare_method, NULL);
+	rz_list_append(c->methods, symbol);
+	o->class_members_unsorted = true;
 
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
 	if (key) {
@@ -479,10 +508,8 @@ RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject
 		return NULL;
 	}
 
-	if (!c->fields->sorted) {
-		rz_list_sort(c->fields, (RzListComparator)bin_compare_class_field, NULL);
-	}
-	rz_list_add_sorted(c->fields, field, (RzListComparator)bin_compare_class_field, NULL);
+	rz_list_append(c->fields, field);
+	o->class_members_unsorted = true;
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name);
 	if (key) {
 		ht_sp_insert(o->glue_to_class_field, key, field);
@@ -762,6 +789,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBi
  */
 RZ_API const RzPVector /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
+	bin_object_sort_classes(obj);
 	return obj->classes;
 }
 

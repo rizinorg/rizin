@@ -472,6 +472,29 @@ Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin
 RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal) {
 	rz_return_val_if_fail(bin, NULL);
 
+	if (!bin->symbols) {
+		return NULL;
+	}
+
+	if (!bin->symbol_ordinal_idx) {
+		HtUUOptions opt = { 0 };
+		bin->symbol_ordinal_idx = ht_uu_new_opt_size(&opt, (ut32)rz_vector_len(bin->symbols));
+		if (bin->symbol_ordinal_idx) {
+			size_t idx = 0;
+			RzBinElfSymbol *symbol;
+			rz_vector_foreach (bin->symbols, symbol) {
+				ht_uu_insert(bin->symbol_ordinal_idx, symbol->ordinal, idx);
+				idx++;
+			}
+		}
+	}
+
+	if (bin->symbol_ordinal_idx) {
+		bool found = false;
+		ut64 idx = ht_uu_find(bin->symbol_ordinal_idx, ordinal, &found);
+		return found ? rz_vector_index_ptr(bin->symbols, idx) : NULL;
+	}
+
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		if (symbol->ordinal == ordinal) {

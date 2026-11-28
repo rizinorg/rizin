@@ -583,6 +583,82 @@ RZ_API void rz_bin_class_free(RZ_NULLABLE RzBinClass *k) {
 	free(k);
 }
 
+typedef struct rz_bin_trycatch_entry_t {
+	RzBinTrycatch *tc;
+	size_t orig_idx;
+	ut64 prefix_max_to;
+} RzBinTrycatchEntry;
+
+struct rz_bin_trycatch_index_t {
+	RzBinTrycatchEntry *entries;
+	size_t count;
+};
+
+static int trycatch_entry_cmp_from(const void *a, const void *b) {
+	const RzBinTrycatchEntry *ea = a;
+	const RzBinTrycatchEntry *eb = b;
+	if (ea->tc->from != eb->tc->from) {
+		return (ea->tc->from > eb->tc->from) - (ea->tc->from < eb->tc->from);
+	}
+	return (ea->orig_idx > eb->orig_idx) - (ea->orig_idx < eb->orig_idx);
+}
+
+static int trycatch_entry_cmp_orig(const void *a, const void *b) {
+	const RzBinTrycatchEntry *ea = a;
+	const RzBinTrycatchEntry *eb = b;
+	return (ea->orig_idx > eb->orig_idx) - (ea->orig_idx < eb->orig_idx);
+}
+
+RZ_IPI void rz_bin_trycatch_index_free(RZ_NULLABLE RzBinTrycatchIndex *idx) {
+	if (!idx) {
+		return;
+	}
+	free(idx->entries);
+	free(idx);
+}
+
+/**
+ * \brief Build or return the cached interval index for \p tcs on \p bf->o.
+ *
+ * \param bf Binary file
+ * \param tcs Non-empty try/catch vector owned by \p bf->o
+ * \return Cached interval index, or NULL on allocation failure
+ */
+static RzBinTrycatchIndex *bin_file_get_trycatch_index(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzPVector /*<RzBinTrycatch *>*/ *tcs) {
+	size_t count = rz_pvector_len(tcs);
+	if (bf->o->trycatch_index && bf->o->trycatch_index->count == count) {
+		return bf->o->trycatch_index;
+	}
+	rz_bin_trycatch_index_free(bf->o->trycatch_index);
+	bf->o->trycatch_index = NULL;
+
+	RzBinTrycatchIndex *idx = RZ_NEW0(RzBinTrycatchIndex);
+	if (!idx) {
+		return NULL;
+	}
+	idx->entries = RZ_NEWS(RzBinTrycatchEntry, count);
+	if (!idx->entries) {
+		free(idx);
+		return NULL;
+	}
+	for (size_t i = 0; i < count; i++) {
+		idx->entries[i].tc = rz_pvector_at(tcs, i);
+		idx->entries[i].orig_idx = i;
+		idx->entries[i].prefix_max_to = 0;
+	}
+	qsort(idx->entries, count, sizeof(*idx->entries), trycatch_entry_cmp_from);
+	ut64 max_to = 0;
+	for (size_t i = 0; i < count; i++) {
+		if (idx->entries[i].tc->to > max_to) {
+			max_to = idx->entries[i].tc->to;
+		}
+		idx->entries[i].prefix_max_to = max_to;
+	}
+	idx->count = count;
+	bf->o->trycatch_index = idx;
+	return idx;
+}
+
 /**
  * \brief Get the trycatch information from the given binary file.
  *
@@ -603,6 +679,129 @@ RZ_API RZ_BORROW RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NO
 		}
 	}
 	return bf->o->trycatch;
+}
+
+/**
+ * \brief Iterate over try/catch records matching \p addr in their original binary order.
+ *
+ * When \p exact_from is true, invokes \p cb for every record with \c tc->from == addr.
+ * When \p exact_from is false, invokes \p cb for every record with \c addr >= tc->from && addr < tc->to.
+ * Uses a lazily built sorted interval index on \p bf->o for O(log T + k) lookup while preserving
+ * the original inner-before-outer order of \p bf->o->trycatch.
+ *
+ * \param bf Binary file
+ * \param addr Virtual address to query
+ * \param exact_from Match only \c tc->from == addr when true, or the half-open range \c [from, to) when false
+ * \param cb Callback invoked for each matching record; returning false stops iteration early
+ * \param user Opaque user pointer forwarded to \p cb
+ * \return true if all matching records were visited, false if stopped early by \p cb or on error
+ */
+RZ_API bool rz_bin_file_trycatch_foreach_at(RZ_NONNULL RzBinFile *bf, ut64 addr, bool exact_from, RZ_NONNULL RzBinTrycatchCb cb, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(bf && bf->o && cb, false);
+	RzPVector *tcs = rz_bin_file_get_trycatch(bf);
+	if (!tcs) {
+		return false;
+	}
+	if (rz_pvector_empty(tcs)) {
+		return true;
+	}
+	RzBinTrycatchIndex *idx = bin_file_get_trycatch_index(bf, tcs);
+	if (!idx) {
+		return false;
+	}
+	const RzBinTrycatchEntry *entries = idx->entries;
+	const size_t count = idx->count;
+
+	if (exact_from) {
+		size_t lo = 0, hi = count;
+		while (lo < hi) {
+			size_t mid = lo + (hi - lo) / 2;
+			if (entries[mid].tc->from < addr) {
+				lo = mid + 1;
+			} else {
+				hi = mid;
+			}
+		}
+		for (size_t i = lo; i < count && entries[i].tc->from == addr; i++) {
+			if (!cb(entries[i].tc, user)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// upper_bound: first entry with tc->from > addr
+	size_t lo = 0, hi = count;
+	while (lo < hi) {
+		size_t mid = lo + (hi - lo) / 2;
+		if (entries[mid].tc->from <= addr) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+
+	RzBinTrycatchEntry stack_matches[16];
+	RzBinTrycatchEntry *matches = stack_matches;
+	size_t matches_cap = RZ_ARRAY_SIZE(stack_matches);
+	size_t nmatches = 0;
+	bool heap_matches = false;
+
+	for (size_t i = lo; i > 0; i--) {
+		const RzBinTrycatchEntry *e = &entries[i - 1];
+		if (e->prefix_max_to <= addr) {
+			break;
+		}
+		if (addr < e->tc->to) {
+			if (nmatches == matches_cap) {
+				size_t new_cap = matches_cap * 2;
+				RzBinTrycatchEntry *grown = heap_matches
+					? realloc(matches, new_cap * sizeof(*grown))
+					: malloc(new_cap * sizeof(*grown));
+				if (!grown) {
+					if (heap_matches) {
+						free(matches);
+					}
+					return false;
+				}
+				if (!heap_matches) {
+					memcpy(grown, stack_matches, nmatches * sizeof(*grown));
+					heap_matches = true;
+				}
+				matches = grown;
+				matches_cap = new_cap;
+			}
+			matches[nmatches++] = *e;
+		}
+	}
+
+	if (nmatches > 1) {
+		if (nmatches <= 16) {
+			for (size_t i = 1; i < nmatches; i++) {
+				RzBinTrycatchEntry key = matches[i];
+				size_t j = i;
+				while (j > 0 && matches[j - 1].orig_idx > key.orig_idx) {
+					matches[j] = matches[j - 1];
+					j--;
+				}
+				matches[j] = key;
+			}
+		} else {
+			qsort(matches, nmatches, sizeof(*matches), trycatch_entry_cmp_orig);
+		}
+	}
+
+	bool completed = true;
+	for (size_t i = 0; i < nmatches; i++) {
+		if (!cb(matches[i].tc, user)) {
+			completed = false;
+			break;
+		}
+	}
+	if (heap_matches) {
+		free(matches);
+	}
+	return completed;
 }
 
 RZ_API RzPVector /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf) {
