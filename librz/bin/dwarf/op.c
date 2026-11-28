@@ -1364,7 +1364,7 @@ RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(
 }
 
 static bool RzBinDwarfEvaluationResult_to_loc(
-	RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *eval_result, Location *loc) {
+	RZ_OWN_IF_VALID RzBinDwarfEvaluation *eval, RZ_OWN_IF_VALID RzBinDwarfEvaluationResult *eval_result, Location *loc) {
 	if (!loc) {
 		return false;
 	}

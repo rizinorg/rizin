@@ -38,18 +38,20 @@ extern "C" {
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
 
 #ifdef RZ_BINDINGS
-#define RZ_OWN    __attribute__((annotate("RZ_OWN")))
-#define RZ_BORROW __attribute__((annotate("RZ_BORROW")))
+#define RZ_OWN          __attribute__((annotate("RZ_OWN")))
+#define RZ_BORROW       __attribute__((annotate("RZ_BORROW")))
+#define RZ_OWN_IF_VALID __attribute__((annotate("RZ_OWN_IF_VALID")))
 
 #define RZ_NONNULL   __attribute__((annotate("RZ_NONNULL")))
 #define RZ_NULLABLE  __attribute__((annotate("RZ_NULLABLE")))
 #define RZ_DEPRECATE __attribute__((annotate("RZ_DEPRECATE")))
 #else
-#define RZ_OWN       /* pointer ownership is transferred */
-#define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
-#define RZ_NONNULL   /* pointer can not be null */
-#define RZ_NULLABLE  /* pointer can be null */
-#define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+#define RZ_OWN          /* pointer ownership is transferred */
+#define RZ_BORROW       /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define RZ_OWN_IF_VALID /* pointer ownership is transferred if parameter is valid, otherwise it is not transferred */
+#define RZ_NONNULL      /* pointer can not be null */
+#define RZ_NULLABLE     /* pointer can be null */
+#define RZ_DEPRECATE    /* should not be used in new code and should/will be removed in the future */
 #endif
 
 #define RZ_IFNULL(x) /* default value for the pointer when null */
