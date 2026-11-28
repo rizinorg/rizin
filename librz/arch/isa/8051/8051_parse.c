@@ -234,7 +234,16 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 2;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = RZ_NEW0(I8051OpAddressing);
+		if (!op->argv[0]) {
+			free(op->argv);
+			free(op);
+			return NULL;
+		}
 		op->argv[0]->mode = I8051_ADDRESSING_ABSOLUTE;
 		op->argv[0]->d.addr16 = (((buf[0] >> 4) / 2) << 8) | buf[1];
 		break;
@@ -245,7 +254,16 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 3;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = RZ_NEW0(I8051OpAddressing);
+		if (!op->argv[0]) {
+			free(op->argv);
+			free(op);
+			return NULL;
+		}
 		op->argv[0]->mode = I8051_ADDRESSING_LONG;
 		op->argv[0]->d.addr16 = (buf[1] << 8) | buf[2];
 		break;
@@ -255,6 +273,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 1;
 		op->argc = 2;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_register_a();
 		op->argv[1] = addressing_indexed(hi == 0x90 ? I8051_DPTR : I8051_PC);
 		break;
@@ -264,6 +286,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 1;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_indexed(I8051_DPTR);
 		break;
 	}
@@ -276,6 +302,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 2;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, 1);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_relative(buf[1]);
 		break;
 	}
@@ -285,6 +315,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = lo <= 0x5 ? 2 : 1;
 		op->argc = 2;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_register_a();
 		op->argv[1] = addressing_pattern1_imm(buf);
 		break;
@@ -294,6 +328,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = lo == 0x5 ? 2 : 1;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		switch (lo) {
 		case 0x3: {
 			op->argv[0] = addressing_register(I8051_DPTR);
@@ -315,6 +353,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 1;
 		op->argc = 2;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_register_a();
 		op->argv[1] = addressing_register_b();
 		break;
@@ -327,6 +369,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 			op->len = 2;
 			op->argc = 2;
 			op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+			if (!op->argv) {
+				free(op);
+				return NULL;
+			}
 			op->argv[0] = addressing_register(I8051_CY);
 			op->argv[1] = addressing_bit(buf[1]);
 		} else {
@@ -339,12 +385,20 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 2;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_direct(buf[1]);
 		break;
 	}
 	case I_DJNZ: {
 		op->argc = 2;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		if (lo == 0x5) {
 			op->len = 3;
 			op->argv[0] = addressing_direct(buf[1]);
@@ -360,6 +414,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 3;
 		op->argc = 3;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = lo > 0x5 ? addressing_pattern1(buf) : addressing_register_a();
 		op->argv[1] = lo == 0x5 ? addressing_direct(buf[1]) : addressing_immediate(buf[1]);
 		op->argv[2] = addressing_relative(buf[2]);
@@ -371,6 +429,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = lo == 2 ? 2 : 1;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		switch (lo) {
 		case 0x2:
 			op->argv[0] = addressing_bit(buf[1]);
@@ -390,6 +452,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 	case I_SETB: {
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		if (lo == 2) {
 			op->argv[0] = addressing_bit(buf[1]);
 			op->len = 2;
@@ -408,6 +474,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 	case I_MOV: {
 		op->argc = 2;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		switch (hi) {
 		case 0x70: {
 			switch (lo) {
@@ -500,6 +570,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 1;
 		op->argc = 2;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		if (hi == 0xf) {
 			op->argv[0] = addressing_pattern11(buf);
 			op->argv[1] = addressing_register_a();
@@ -515,6 +589,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 3;
 		op->argc = 2;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_bit(buf[1]);
 		op->argv[1] = addressing_relative(buf[2]);
 		break;
@@ -527,6 +605,10 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->len = 1;
 		op->argc = 1;
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
+		if (!op->argv) {
+			free(op);
+			return NULL;
+		}
 		op->argv[0] = addressing_register_a();
 		break;
 	}

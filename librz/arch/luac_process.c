@@ -206,9 +206,16 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 		ut16 index = 0;
 
 		binfile->o->lines = RZ_NEW0(RzBinSourceLineInfo);
+		if (!binfile->o->lines) {
+			return false;
+		}
 		const size_t lc = rz_pvector_len(luac_obj->line_nums_vec);
 		binfile->o->lines->samples_count = lc;
 		binfile->o->lines->samples = RZ_NEWS0(RzBinSourceLineSample, lc);
+		if (!binfile->o->lines->samples) {
+			RZ_FREE(binfile->o->lines);
+			return false;
+		}
 
 		rz_pvector_foreach (ls, lit) {
 			const RzBinSourceLineSample *line_num = (RzBinSourceLineSample *)*lit;

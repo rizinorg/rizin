@@ -277,6 +277,9 @@ RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	RzRegItem *ripc = rz_reg_get(rreg, "PC", -1);
+	if (!ripc) {
+		return false;
+	}
 	RzVector *vreg = ht_up_find(esil->trace->registers, ripc->offset | (ripc->arena << 16), NULL);
 	if (!vreg) {
 		RZ_LOG_ERROR("failed to find PC change vector\n");
