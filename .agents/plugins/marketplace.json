@@ -1,0 +1,16 @@
+{
+  "name": "rizin",
+  "interface": {
+    "displayName": "Rizin"
+  },
+  "plugins": [
+    {
+      "name": "rizin",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "category": "Security"
+    }
+  ]
+}

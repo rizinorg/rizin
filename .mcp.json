@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rizin": {
+      "command": "rizin-mcp",
+      "args": ["--transport", "pipe"]
+    }
+  }
+}

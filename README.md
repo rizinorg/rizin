@@ -109,6 +109,25 @@ We provide a way to interact with Rizin from Python, Haskell, OCaml,
 Ruby, Rust, and Go languages through [rzpipe](https://github.com/rizinorg/rz-pipe).
 Other languages although not currently supported could be easily added.
 
+# Install as an agent plugin
+
+This repository ships an agent-agnostic skills marketplace for reverse
+engineering with Rizin. The catalog is `.agents/plugins/marketplace.json`
+and points at a single local plugin (`rizin`, source `./`) whose skills live
+under `skills/`.
+
+Add this repo as a marketplace in your agent, then install the `rizin`
+plugin. Skills cover triage, analysis, debugging, patching, search, and
+scripting with the Rizin CLI and companion tools (`rz-bin`, `rz-asm`,
+`rz-diff`, `rz-hash`, `rz-find`, `rz-ax`, rz-pipe).
+
+Optional MCP: build/install
+[rizin-mcp](https://github.com/rizinorg/rizin-mcp) so `rizin-mcp` is on
+your `PATH`. The bundled `.mcp.json` starts it with `--transport pipe`
+(see that project's README). Client-specific manifests
+(`.claude-plugin/`, `.codex-plugin/`) are provided for agents that expect
+them; the marketplace itself is not tied to one product.
+
 # Community
 
 Our website and blog: [https://www.rizin.re/](https://www.rizin.re/)
