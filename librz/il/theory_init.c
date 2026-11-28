@@ -71,12 +71,6 @@ void *rz_il_handler_let(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return r;
 }
 
-void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-	RZ_LOG_ERROR("RzIL: unimplemented op handler (%d).\n", (int)op->code);
-	return NULL;
-}
-
 bool rz_il_handler_effect_unimplemented(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 	RZ_LOG_ERROR("RzIL: unimplemented op handler (%d).\n", (int)op->code);

@@ -1383,6 +1383,105 @@ static bool test_rzil_vm_all_float_rmode_payloads() {
 	CHECK_DYNAMIC_RMODE_OP(
 		rz_il_op_new_fcompound_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f), rz_il_op_new_bitv_from_ut64(32, 2)),
 		RZ_IL_OP_FCOMPOUND, fcompound);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fexp_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FEXP, fexp);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fexpm1_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FEXPM1, fexpm1);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fexp2_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FEXP2, fexp2);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fexp2m1_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FEXP2M1, fexp2m1);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fexp10_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FEXP10, fexp10);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fexp10m1_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FEXP10M1, fexp10m1);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_flog_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FLOG, flog);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_flog2_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FLOG2, flog2);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_flog10_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FLOG10, flog10);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_flogp1_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FLOGP1, flogp1);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_flog2p1_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FLOG2P1, flog2p1);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_flog10p1_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FLOG10P1, flog10p1);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fsin_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FSIN, fsin);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcos_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FCOS, fcos);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_ftan_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FTAN, ftan);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fsinpi_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FSINPI, fsinpi);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcospi_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FCOSPI, fcospi);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_ftanpi_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FTANPI, ftanpi);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fasin_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FASIN, fasin);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_facos_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FACOS, facos);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fatan_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FATAN, fatan);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fasinpi_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FASINPI, fasinpi);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_facospi_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FACOSPI, facospi);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fatanpi_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FATANPI, fatanpi);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fsinh_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FSINH, fsinh);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fcosh_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FCOSH, fcosh);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_ftanh_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FTANH, ftanh);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fasinh_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FASINH, fasinh);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_facosh_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FACOSH, facosh);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fatanh_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(0.5f)),
+		RZ_IL_OP_FATANH, fatanh);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fatan2_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f)),
+		RZ_IL_OP_FATAN2, fatan2);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fatan2pi_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f)),
+		RZ_IL_OP_FATAN2PI, fatan2pi);
+	CHECK_DYNAMIC_RMODE_OP(
+		rz_il_op_new_fpowr_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE), rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f)),
+		RZ_IL_OP_FPOWR, fpowr);
 
 #undef CHECK_DYNAMIC_RMODE_OP
 
@@ -1547,6 +1646,36 @@ static bool test_rzil_opbuilder_float_rmode_aliases() {
 	mu_assert_notnull(op, "dynamic fmad opbuilder alias");
 	mu_assert_eq(op->code, RZ_IL_OP_FMAD, "dynamic fmad alias maps to fmad");
 	rz_il_op_pure_free(op);
+
+	op = FEXP(RZ_FLOAT_RMODE_RNE, F64(1.0));
+	mu_assert_notnull(op, "static fexp opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FEXP, "static fexp alias maps to fexp");
+	rz_il_op_pure_free(op);
+
+	op = FLOG2P1_DYN_RMODE(U32(RZ_FLOAT_RMODE_RNE), F32(1.0f));
+	mu_assert_notnull(op, "dynamic flog2p1 opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FLOG2P1, "dynamic flog2p1 alias maps to flog2p1");
+	rz_il_op_pure_free(op);
+
+	op = FATANH(RZ_FLOAT_RMODE_RTZ, F32(0.5f));
+	mu_assert_notnull(op, "static fatanh opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FATANH, "static fatanh alias maps to fatanh");
+	rz_il_op_pure_free(op);
+
+	op = FATAN2(RZ_FLOAT_RMODE_RNE, F32(1.0f), F32(2.0f));
+	mu_assert_notnull(op, "static fatan2 opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FATAN2, "static fatan2 alias maps to fatan2");
+	rz_il_op_pure_free(op);
+
+	op = FATAN2PI_DYN_RMODE(U32(RZ_FLOAT_RMODE_RNE), F32(1.0f), F32(2.0f));
+	mu_assert_notnull(op, "dynamic fatan2pi opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FATAN2PI, "dynamic fatan2pi alias maps to fatan2pi");
+	rz_il_op_pure_free(op);
+
+	op = FPOWR_DYN_RMODE(U32(RZ_FLOAT_RMODE_RNE), F32(2.0f), F32(3.0f));
+	mu_assert_notnull(op, "dynamic fpowr opbuilder alias");
+	mu_assert_eq(op->code, RZ_IL_OP_FPOWR, "dynamic fpowr alias maps to fpowr");
+	rz_il_op_pure_free(op);
 	mu_end;
 }
 
@@ -1647,6 +1776,293 @@ static bool test_rzil_vm_runtime_rmode_compact_composition() {
 	mu_end;
 }
 
+static RzFloat *eval_float_op(RzILVM *vm, RzILOpFloat *op) {
+	RzFloat *result = op ? rz_il_evaluate_float(vm, op) : NULL;
+	rz_il_op_pure_free(op);
+	return result;
+}
+
+#define CHECK_FLOAT_RESULT(op_expr, expected_hex, expected_exception, message) \
+	do { \
+		RzFloat *res = eval_float_op(vm, (op_expr)); \
+		mu_assert_notnull(res, message); \
+		mu_assert_streq_free(rz_float_as_hex_string(res, true), expected_hex, message); \
+		mu_assert_eq(res->exception, expected_exception, message); \
+		rz_float_free(res); \
+	} while (0)
+
+static bool test_rzil_vm_op_exp_log() {
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+
+	// exact results carry no exception
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp2(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(3.0)),
+		"0x4020000000000000", 0, "fexp2 3.0 = 8.0");
+	CHECK_FLOAT_RESULT(rz_il_op_new_flog2(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(8.0)),
+		"0x4008000000000000", 0, "flog2 8.0 = 3.0");
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp10(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f32(2.0f)),
+		"0x42c80000", 0, "fexp10 2.0f = 100.0f");
+	CHECK_FLOAT_RESULT(rz_il_op_new_flog10(RZ_FLOAT_RMODE_RTZ, rz_il_op_new_float_from_f32(1000.0f)),
+		"0x40400000", 0, "flog10 1000.0f = 3.0f");
+	CHECK_FLOAT_RESULT(rz_il_op_new_flog(RZ_FLOAT_RMODE_RTN, rz_il_op_new_float_from_f64(1.0)),
+		"0x0000000000000000", 0, "flog 1.0 = +0 even when rounding down");
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexpm1(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(-0.0)),
+		"0x8000000000000000", 0, "fexpm1 -0 = -0");
+	CHECK_FLOAT_RESULT(rz_il_op_new_flog2p1(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(1.0)),
+		"0x3ff0000000000000", 0, "flog2p1 1.0 = 1.0");
+
+	// e is irrational: e^1 is inexact and lies between ...769 and ...76a
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(1.0)),
+		"0x4005bf0a8b145769", RZ_FLOAT_E_INEXACT, "fexp 1.0 rne");
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp(RZ_FLOAT_RMODE_RTZ, rz_il_op_new_float_from_f64(1.0)),
+		"0x4005bf0a8b145769", RZ_FLOAT_E_INEXACT, "fexp 1.0 rtz");
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp_dyn_rmode(rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTP), rz_il_op_new_float_from_f64(1.0)),
+		"0x4005bf0a8b14576a", RZ_FLOAT_E_INEXACT, "fexp 1.0 with a run-time rtp");
+
+	// special operands
+	CHECK_FLOAT_RESULT(rz_il_op_new_flog(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(0.0)),
+		"0xfff0000000000000", RZ_FLOAT_E_DIV_ZERO, "flog +0 = -inf with divide by zero");
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(F64_NINF)),
+		"0x0000000000000000", 0, "fexp -inf = +0");
+	RzFloat *res = eval_float_op(vm, rz_il_op_new_flog(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(-1.0)));
+	mu_assert_notnull(res, "flog -1.0");
+	mu_assert_true(rz_float_is_nan(res), "flog -1.0 is NaN");
+	mu_assert_eq(res->exception, RZ_FLOAT_E_INVALID_OP, "flog -1.0 is invalid");
+	rz_float_free(res);
+
+	// the result keeps the format of the operand
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp2(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f80(3.0L)),
+		"0x40028000000000000000", 0, "binary80 fexp2 3.0 = 8.0");
+
+	// exceptions raised while computing the operand are kept
+	CHECK_FLOAT_RESULT(rz_il_op_new_fexp2(RZ_FLOAT_RMODE_RNE,
+				   rz_il_op_new_fconvert(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE,
+					   rz_il_op_new_float_from_f64(3.0 + 0x1p-40))),
+		"0x41000000", RZ_FLOAT_E_INEXACT, "fexp2 keeps the inexact operand exception");
+
+	RzILOpBool *eop = rz_il_op_new_fexcept(RZ_FLOAT_E_INEXACT,
+		rz_il_op_new_fexp(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(1.0)));
+	RzILBool *e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_notnull(e, "fexcept of fexp");
+	mu_assert_true(e->b, "fexp 1.0 raises inexact");
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "inexact exception event");
+	rz_il_bool_free(e);
+	rz_il_op_pure_free(eop);
+	rz_il_vm_clear_events(vm);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+#undef CHECK_FLOAT_RESULT
+
+static bool float_results_agree(RzFloat *a, RzFloat *b) {
+	if (!a || !b) {
+		return !a && !b;
+	}
+	return a->r == b->r && rz_bv_eq(a->s, b->s) && a->exception == b->exception;
+}
+
+/* Every handler must call its own rz_float_* function with the operands in
+ * order and the rounding mode of the op: compare it with a direct call. */
+static bool test_rzil_vm_float_math_dispatch() {
+	const struct {
+		RzILOpPureCode code;
+		RzILOpFloat *(*ctor)(RzFloatRMode, RzILOpFloat *);
+		RzFloat *(*fn)(RzFloat *, RzFloatRMode);
+	} unops[] = {
+		{ RZ_IL_OP_FRSQRT, rz_il_op_new_frsqrt, rz_float_rsqrt },
+		{ RZ_IL_OP_FEXP, rz_il_op_new_fexp, rz_float_exp },
+		{ RZ_IL_OP_FEXPM1, rz_il_op_new_fexpm1, rz_float_expm1 },
+		{ RZ_IL_OP_FEXP2, rz_il_op_new_fexp2, rz_float_exp2 },
+		{ RZ_IL_OP_FEXP2M1, rz_il_op_new_fexp2m1, rz_float_exp2m1 },
+		{ RZ_IL_OP_FEXP10, rz_il_op_new_fexp10, rz_float_exp10 },
+		{ RZ_IL_OP_FEXP10M1, rz_il_op_new_fexp10m1, rz_float_exp10m1 },
+		{ RZ_IL_OP_FLOG, rz_il_op_new_flog, rz_float_log },
+		{ RZ_IL_OP_FLOG2, rz_il_op_new_flog2, rz_float_log2 },
+		{ RZ_IL_OP_FLOG10, rz_il_op_new_flog10, rz_float_log10 },
+		{ RZ_IL_OP_FLOGP1, rz_il_op_new_flogp1, rz_float_logp1 },
+		{ RZ_IL_OP_FLOG2P1, rz_il_op_new_flog2p1, rz_float_log2p1 },
+		{ RZ_IL_OP_FLOG10P1, rz_il_op_new_flog10p1, rz_float_log10p1 },
+		{ RZ_IL_OP_FSIN, rz_il_op_new_fsin, rz_float_sin },
+		{ RZ_IL_OP_FCOS, rz_il_op_new_fcos, rz_float_cos },
+		{ RZ_IL_OP_FTAN, rz_il_op_new_ftan, rz_float_tan },
+		{ RZ_IL_OP_FSINPI, rz_il_op_new_fsinpi, rz_float_sinpi },
+		{ RZ_IL_OP_FCOSPI, rz_il_op_new_fcospi, rz_float_cospi },
+		{ RZ_IL_OP_FTANPI, rz_il_op_new_ftanpi, rz_float_tanpi },
+		{ RZ_IL_OP_FASIN, rz_il_op_new_fasin, rz_float_asin },
+		{ RZ_IL_OP_FACOS, rz_il_op_new_facos, rz_float_acos },
+		{ RZ_IL_OP_FATAN, rz_il_op_new_fatan, rz_float_atan },
+		{ RZ_IL_OP_FASINPI, rz_il_op_new_fasinpi, rz_float_asinpi },
+		{ RZ_IL_OP_FACOSPI, rz_il_op_new_facospi, rz_float_acospi },
+		{ RZ_IL_OP_FATANPI, rz_il_op_new_fatanpi, rz_float_atanpi },
+		{ RZ_IL_OP_FSINH, rz_il_op_new_fsinh, rz_float_sinh },
+		{ RZ_IL_OP_FCOSH, rz_il_op_new_fcosh, rz_float_cosh },
+		{ RZ_IL_OP_FTANH, rz_il_op_new_ftanh, rz_float_tanh },
+		{ RZ_IL_OP_FASINH, rz_il_op_new_fasinh, rz_float_asinh },
+		{ RZ_IL_OP_FACOSH, rz_il_op_new_facosh, rz_float_acosh },
+		{ RZ_IL_OP_FATANH, rz_il_op_new_fatanh, rz_float_atanh },
+	};
+	const struct {
+		RzILOpPureCode code;
+		RzILOpFloat *(*ctor)(RzFloatRMode, RzILOpFloat *, RzILOpFloat *);
+		RzFloat *(*fn)(RzFloat *, RzFloat *, RzFloatRMode);
+	} binops[] = {
+		{ RZ_IL_OP_FHYPOT, rz_il_op_new_fhypot, rz_float_hypot },
+		{ RZ_IL_OP_FPOW, rz_il_op_new_fpow, rz_float_pow },
+		{ RZ_IL_OP_FATAN2, rz_il_op_new_fatan2, rz_float_atan2 },
+		{ RZ_IL_OP_FATAN2PI, rz_il_op_new_fatan2pi, rz_float_atan2pi },
+		{ RZ_IL_OP_FPOWR, rz_il_op_new_fpowr, rz_float_powr },
+	};
+	const struct {
+		RzILOpPureCode code;
+		RzILOpFloat *(*ctor)(RzFloatRMode, RzILOpFloat *, RzILOpBitVector *);
+		RzFloat *(*fn)(RzFloat *, RzBitVector *, RzFloatRMode);
+	} hybrids[] = {
+		{ RZ_IL_OP_FROOTN, rz_il_op_new_frootn, rz_float_rootn },
+		{ RZ_IL_OP_FPOWN, rz_il_op_new_fpown, rz_float_pown },
+		{ RZ_IL_OP_FCOMPOUND, rz_il_op_new_fcompound, rz_float_compound },
+	};
+	// asymmetric operands, so that swapped operands give a different result
+	const double xs[] = { 0.375, 2.5, -0.75 };
+	const double ys[] = { 2.5, -0.5, 3.0 };
+	const st64 ns[] = { 3, -2, 0 };
+	const RzFloatRMode mode = RZ_FLOAT_RMODE_RTP;
+
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(unops); i++) {
+		const char *name = rz_il_op_pure_code_stringify(unops[i].code);
+		for (size_t j = 0; j < RZ_ARRAY_SIZE(xs); j++) {
+			RzILOpFloat *op = unops[i].ctor(mode, rz_il_op_new_float_from_f64(xs[j]));
+			mu_assert_eq(op->code, unops[i].code, name);
+			RzFloat *actual = eval_float_op(vm, op);
+			RzFloat *x = rz_float_new_from_f64(xs[j]);
+			RzFloat *expected = unops[i].fn(x, mode);
+			mu_assert_true(float_results_agree(actual, expected), name);
+			rz_float_free(x);
+			rz_float_free(expected);
+			rz_float_free(actual);
+		}
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(binops); i++) {
+		const char *name = rz_il_op_pure_code_stringify(binops[i].code);
+		for (size_t j = 0; j < RZ_ARRAY_SIZE(xs); j++) {
+			RzILOpFloat *op = binops[i].ctor(mode, rz_il_op_new_float_from_f64(xs[j]), rz_il_op_new_float_from_f64(ys[j]));
+			mu_assert_eq(op->code, binops[i].code, name);
+			RzFloat *actual = eval_float_op(vm, op);
+			RzFloat *x = rz_float_new_from_f64(xs[j]);
+			RzFloat *y = rz_float_new_from_f64(ys[j]);
+			RzFloat *expected = binops[i].fn(x, y, mode);
+			mu_assert_true(float_results_agree(actual, expected), name);
+			rz_float_free(x);
+			rz_float_free(y);
+			rz_float_free(expected);
+			rz_float_free(actual);
+		}
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(hybrids); i++) {
+		const char *name = rz_il_op_pure_code_stringify(hybrids[i].code);
+		for (size_t j = 0; j < RZ_ARRAY_SIZE(xs); j++) {
+			RzILOpFloat *op = hybrids[i].ctor(mode, rz_il_op_new_float_from_f64(xs[j]), rz_il_op_new_bitv_from_st64(32, ns[j]));
+			mu_assert_eq(op->code, hybrids[i].code, name);
+			RzFloat *actual = eval_float_op(vm, op);
+			RzFloat *x = rz_float_new_from_f64(xs[j]);
+			RzBitVector *n = rz_bv_new_from_st64(32, ns[j]);
+			RzFloat *expected = hybrids[i].fn(x, n, mode);
+			mu_assert_true(float_results_agree(actual, expected), name);
+			rz_float_free(x);
+			rz_bv_free(n);
+			rz_float_free(expected);
+			rz_float_free(actual);
+		}
+	}
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_float_math_export() {
+	RzILOpFloat *op = rz_il_op_new_fexp(RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(1.0));
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_il_op_pure_stringify(op, &sb, false);
+	mu_assert_streq(rz_strbuf_get(&sb), "(fexp rne (float 1 (bv 64 0x3ff0000000000000) ))", "fexp string export");
+	rz_strbuf_fini(&sb);
+	PJ *pj = pj_new();
+	rz_il_op_pure_json(op, pj);
+	mu_assert_streq_free(pj_drain(pj),
+		"{\"opcode\":\"fexp\",\"rmode\":\"rne\",\"f\":{\"opcode\":\"float\",\"format\":1,\"bv\":{\"opcode\":\"bitv\",\"bits\":\"0x3ff0000000000000\",\"len\":64}}}",
+		"fexp JSON export");
+	RzGraph *graph = rz_il_op_pure_graph(op, "fexp");
+	mu_assert_notnull(graph, "fexp graph export");
+	char *dot = rz_graph_drawable_to_dot(graph, NULL, NULL);
+	mu_assert_strcontains(dot, "label=\"fexp\"", "graph names the fexp node");
+	free(dot);
+	rz_graph_free(graph);
+	rz_il_op_pure_free(op);
+
+	// atan2 takes the ordinate first
+	op = rz_il_op_new_fatan2(RZ_FLOAT_RMODE_RTZ,
+		rz_il_op_new_var("y", RZ_IL_VAR_KIND_GLOBAL),
+		rz_il_op_new_var("x", RZ_IL_VAR_KIND_GLOBAL));
+	mu_assert_eq(op->op.fatan2.y->code, RZ_IL_OP_VAR, "first atan2 operand");
+	mu_assert_streq(op->op.fatan2.y->op.var.v, "y", "the first atan2 operand is the ordinate");
+	mu_assert_streq(op->op.fatan2.x->op.var.v, "x", "the second atan2 operand is the abscissa");
+	mu_assert_ptreq(op->op.binop_float_alg.x, op->op.fatan2.y, "positional access sees the ordinate first");
+	rz_strbuf_init(&sb);
+	rz_il_op_pure_stringify(op, &sb, false);
+	mu_assert_streq(rz_strbuf_get(&sb), "(fatan2 rtz (var y) (var x))", "fatan2 string export");
+	rz_strbuf_fini(&sb);
+	pj = pj_new();
+	rz_il_op_pure_json(op, pj);
+	mu_assert_streq_free(pj_drain(pj),
+		"{\"opcode\":\"fatan2\",\"rmode\":\"rtz\",\"y\":{\"opcode\":\"var\",\"value\":\"y\"},\"x\":{\"opcode\":\"var\",\"value\":\"x\"}}",
+		"fatan2 JSON export keys the operands y and x");
+	RzILStringifyCtx stringify_ctx = { .indent = 0, .indent_inc = 2 };
+	rz_strbuf_init(&sb);
+	mu_assert_true(rz_il_op_pure_stringify_unicode(&stringify_ctx, op, &sb), "fatan2 Unicode export");
+	mu_assert_streq(rz_strbuf_get(&sb), "(rtz y ∡ x)", "fatan2 Unicode export");
+	rz_strbuf_fini(&sb);
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_flog2p1_dyn_rmode(rz_il_op_new_var("m", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_var("f", RZ_IL_VAR_KIND_GLOBAL));
+	rz_strbuf_init(&sb);
+	rz_il_op_pure_stringify(op, &sb, false);
+	mu_assert_streq(rz_strbuf_get(&sb), "(flog2p1 (var m) (var f))", "dynamic flog2p1 string export");
+	rz_strbuf_fini(&sb);
+	rz_strbuf_init(&sb);
+	mu_assert_true(rz_il_op_pure_stringify_unicode(&stringify_ctx, op, &sb), "flog2p1 Unicode export");
+	mu_assert_streq(rz_strbuf_get(&sb), "(m log₂1+ f)", "flog2p1 Unicode export");
+	rz_strbuf_fini(&sb);
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fpowr(RZ_FLOAT_RMODE_RNA, rz_il_op_new_var("x", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_var("y", RZ_IL_VAR_KIND_GLOBAL));
+	rz_strbuf_init(&sb);
+	mu_assert_true(rz_il_op_pure_stringify_unicode(&stringify_ctx, op, &sb), "fpowr Unicode export");
+	mu_assert_streq(rz_strbuf_get(&sb), "(rna x ˰ʳ y)", "fpowr Unicode export");
+	rz_strbuf_fini(&sb);
+	rz_il_op_pure_free(op);
+
+	const RzILOpPureCode codes[] = {
+		RZ_IL_OP_FEXP, RZ_IL_OP_FEXPM1, RZ_IL_OP_FEXP2, RZ_IL_OP_FEXP2M1, RZ_IL_OP_FEXP10, RZ_IL_OP_FEXP10M1,
+		RZ_IL_OP_FLOG, RZ_IL_OP_FLOG2, RZ_IL_OP_FLOG10, RZ_IL_OP_FLOGP1, RZ_IL_OP_FLOG2P1, RZ_IL_OP_FLOG10P1,
+		RZ_IL_OP_FSIN, RZ_IL_OP_FCOS, RZ_IL_OP_FTAN, RZ_IL_OP_FSINPI, RZ_IL_OP_FCOSPI, RZ_IL_OP_FTANPI,
+		RZ_IL_OP_FASIN, RZ_IL_OP_FACOS, RZ_IL_OP_FATAN, RZ_IL_OP_FASINPI, RZ_IL_OP_FACOSPI, RZ_IL_OP_FATANPI,
+		RZ_IL_OP_FSINH, RZ_IL_OP_FCOSH, RZ_IL_OP_FTANH, RZ_IL_OP_FASINH, RZ_IL_OP_FACOSH, RZ_IL_OP_FATANH,
+		RZ_IL_OP_FATAN2, RZ_IL_OP_FATAN2PI, RZ_IL_OP_FPOWR
+	};
+	const char *names[] = {
+		"fexp", "fexpm1", "fexp2", "fexp2m1", "fexp10", "fexp10m1",
+		"flog", "flog2", "flog10", "flogp1", "flog2p1", "flog10p1",
+		"fsin", "fcos", "ftan", "fsinpi", "fcospi", "ftanpi",
+		"fasin", "facos", "fatan", "fasinpi", "facospi", "fatanpi",
+		"fsinh", "fcosh", "ftanh", "fasinh", "facosh", "fatanh",
+		"fatan2", "fatan2pi", "fpowr"
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(codes); i++) {
+		mu_assert_streq(rz_il_op_pure_code_stringify(codes[i]), names[i], "opcode name");
+	}
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -1683,6 +2099,9 @@ bool all_tests() {
 	mu_run_test(test_rzil_opbuilder_float_rmode_aliases);
 	mu_run_test(test_rzil_vm_runtime_rmode_avoids_let_capture);
 	mu_run_test(test_rzil_vm_runtime_rmode_compact_composition);
+	mu_run_test(test_rzil_vm_op_exp_log);
+	mu_run_test(test_rzil_vm_float_math_dispatch);
+	mu_run_test(test_rzil_float_math_export);
 	mu_run_test(test_rzil_vm_halt_on_exc);
 	return tests_passed != tests_run;
 }

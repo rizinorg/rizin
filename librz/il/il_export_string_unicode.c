@@ -80,6 +80,39 @@ static bool il_op_float_rmode_string_resolve(RzILStringifyCtx *ctx, const RzILOp
 #define UCD_FPOWN        "˰ⁿ"
 #define UCD_FROOTN       "ⁿ√"
 #define UCD_FCOMPOUND    "∪"
+#define UCD_FEXP         "eˣ"
+#define UCD_FEXPM1       "eˣ−1"
+#define UCD_FEXP2        "2ˣ"
+#define UCD_FEXP2M1      "2ˣ−1"
+#define UCD_FEXP10       "10ˣ"
+#define UCD_FEXP10M1     "10ˣ−1"
+#define UCD_FLOG         "ln"
+#define UCD_FLOG2        "log₂"
+#define UCD_FLOG10       "log₁₀"
+#define UCD_FLOGP1       "ln1+"
+#define UCD_FLOG2P1      "log₂1+"
+#define UCD_FLOG10P1     "log₁₀1+"
+#define UCD_FSIN         "sin"
+#define UCD_FCOS         "cos"
+#define UCD_FTAN         "tan"
+#define UCD_FSINPI       "sinπ"
+#define UCD_FCOSPI       "cosπ"
+#define UCD_FTANPI       "tanπ"
+#define UCD_FASIN        "sin⁻¹"
+#define UCD_FACOS        "cos⁻¹"
+#define UCD_FATAN        "tan⁻¹"
+#define UCD_FASINPI      "sin⁻¹/π"
+#define UCD_FACOSPI      "cos⁻¹/π"
+#define UCD_FATANPI      "tan⁻¹/π"
+#define UCD_FSINH        "sinh"
+#define UCD_FCOSH        "cosh"
+#define UCD_FTANH        "tanh"
+#define UCD_FASINH       "sinh⁻¹"
+#define UCD_FACOSH       "cosh⁻¹"
+#define UCD_FATANH       "tanh⁻¹"
+#define UCD_FATAN2       "∡"
+#define UCD_FATAN2PI     "∡/π"
+#define UCD_FPOWR        "˰ʳ"
 #define UCD_LOAD         "ʟᴅ"
 #define UCD_LOADW        "ʟᴅ"
 #define UCD_STORE        "ꜱᴛ"
@@ -563,6 +596,138 @@ static bool il_opdmp_fcompound(RzILStringifyCtx *ctx, const RzILOpPure *op, RzSt
 	il_op_param_2_with_rmode_arg(UCD_FCOMPOUND, op->op.fcompound, f, pure, n, pure, rmode);
 }
 
+static bool il_opdmp_fexp(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FEXP, op->op.fexp, f, pure, rmode);
+}
+
+static bool il_opdmp_fexpm1(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FEXPM1, op->op.fexpm1, f, pure, rmode);
+}
+
+static bool il_opdmp_fexp2(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FEXP2, op->op.fexp2, f, pure, rmode);
+}
+
+static bool il_opdmp_fexp2m1(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FEXP2M1, op->op.fexp2m1, f, pure, rmode);
+}
+
+static bool il_opdmp_fexp10(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FEXP10, op->op.fexp10, f, pure, rmode);
+}
+
+static bool il_opdmp_fexp10m1(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FEXP10M1, op->op.fexp10m1, f, pure, rmode);
+}
+
+static bool il_opdmp_flog(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FLOG, op->op.flog, f, pure, rmode);
+}
+
+static bool il_opdmp_flog2(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FLOG2, op->op.flog2, f, pure, rmode);
+}
+
+static bool il_opdmp_flog10(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FLOG10, op->op.flog10, f, pure, rmode);
+}
+
+static bool il_opdmp_flogp1(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FLOGP1, op->op.flogp1, f, pure, rmode);
+}
+
+static bool il_opdmp_flog2p1(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FLOG2P1, op->op.flog2p1, f, pure, rmode);
+}
+
+static bool il_opdmp_flog10p1(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FLOG10P1, op->op.flog10p1, f, pure, rmode);
+}
+
+static bool il_opdmp_fsin(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FSIN, op->op.fsin, f, pure, rmode);
+}
+
+static bool il_opdmp_fcos(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FCOS, op->op.fcos, f, pure, rmode);
+}
+
+static bool il_opdmp_ftan(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FTAN, op->op.ftan, f, pure, rmode);
+}
+
+static bool il_opdmp_fsinpi(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FSINPI, op->op.fsinpi, f, pure, rmode);
+}
+
+static bool il_opdmp_fcospi(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FCOSPI, op->op.fcospi, f, pure, rmode);
+}
+
+static bool il_opdmp_ftanpi(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FTANPI, op->op.ftanpi, f, pure, rmode);
+}
+
+static bool il_opdmp_fasin(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FASIN, op->op.fasin, f, pure, rmode);
+}
+
+static bool il_opdmp_facos(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FACOS, op->op.facos, f, pure, rmode);
+}
+
+static bool il_opdmp_fatan(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FATAN, op->op.fatan, f, pure, rmode);
+}
+
+static bool il_opdmp_fasinpi(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FASINPI, op->op.fasinpi, f, pure, rmode);
+}
+
+static bool il_opdmp_facospi(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FACOSPI, op->op.facospi, f, pure, rmode);
+}
+
+static bool il_opdmp_fatanpi(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FATANPI, op->op.fatanpi, f, pure, rmode);
+}
+
+static bool il_opdmp_fsinh(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FSINH, op->op.fsinh, f, pure, rmode);
+}
+
+static bool il_opdmp_fcosh(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FCOSH, op->op.fcosh, f, pure, rmode);
+}
+
+static bool il_opdmp_ftanh(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FTANH, op->op.ftanh, f, pure, rmode);
+}
+
+static bool il_opdmp_fasinh(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FASINH, op->op.fasinh, f, pure, rmode);
+}
+
+static bool il_opdmp_facosh(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FACOSH, op->op.facosh, f, pure, rmode);
+}
+
+static bool il_opdmp_fatanh(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_1_with_rmode_arg(UCD_FATANH, op->op.fatanh, f, pure, rmode);
+}
+
+static bool il_opdmp_fatan2(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_rmode_arg(UCD_FATAN2, op->op.fatan2, y, pure, x, pure, rmode);
+}
+
+static bool il_opdmp_fatan2pi(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_rmode_arg(UCD_FATAN2PI, op->op.fatan2pi, y, pure, x, pure, rmode);
+}
+
+static bool il_opdmp_fpowr(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
+	il_op_param_2_with_rmode_arg(UCD_FPOWR, op->op.fpowr, x, pure, y, pure, rmode);
+}
+
 static bool il_opdmp_load(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsLoad *opx = &op->op.load;
 	return_false_if_fail(rz_strbuf_append(sb, "(" UCD_LOAD));
@@ -744,6 +909,39 @@ static bool il_op_pure_string_resolve(RzILStringifyCtx *ctx, const RzILOpPure *o
 		CASE_IL_OP(FPOWN, fpown);
 		CASE_IL_OP(FROOTN, frootn);
 		CASE_IL_OP(FCOMPOUND, fcompound);
+		CASE_IL_OP(FEXP, fexp);
+		CASE_IL_OP(FEXPM1, fexpm1);
+		CASE_IL_OP(FEXP2, fexp2);
+		CASE_IL_OP(FEXP2M1, fexp2m1);
+		CASE_IL_OP(FEXP10, fexp10);
+		CASE_IL_OP(FEXP10M1, fexp10m1);
+		CASE_IL_OP(FLOG, flog);
+		CASE_IL_OP(FLOG2, flog2);
+		CASE_IL_OP(FLOG10, flog10);
+		CASE_IL_OP(FLOGP1, flogp1);
+		CASE_IL_OP(FLOG2P1, flog2p1);
+		CASE_IL_OP(FLOG10P1, flog10p1);
+		CASE_IL_OP(FSIN, fsin);
+		CASE_IL_OP(FCOS, fcos);
+		CASE_IL_OP(FTAN, ftan);
+		CASE_IL_OP(FSINPI, fsinpi);
+		CASE_IL_OP(FCOSPI, fcospi);
+		CASE_IL_OP(FTANPI, ftanpi);
+		CASE_IL_OP(FASIN, fasin);
+		CASE_IL_OP(FACOS, facos);
+		CASE_IL_OP(FATAN, fatan);
+		CASE_IL_OP(FASINPI, fasinpi);
+		CASE_IL_OP(FACOSPI, facospi);
+		CASE_IL_OP(FATANPI, fatanpi);
+		CASE_IL_OP(FSINH, fsinh);
+		CASE_IL_OP(FCOSH, fcosh);
+		CASE_IL_OP(FTANH, ftanh);
+		CASE_IL_OP(FASINH, fasinh);
+		CASE_IL_OP(FACOSH, facosh);
+		CASE_IL_OP(FATANH, fatanh);
+		CASE_IL_OP(FATAN2, fatan2);
+		CASE_IL_OP(FATAN2PI, fatan2pi);
+		CASE_IL_OP(FPOWR, fpowr);
 	default:
 		rz_warn_if_reached();
 		return rz_strbuf_appendf(sb, UCD_UNK "%u", op->code);

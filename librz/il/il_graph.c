@@ -451,6 +451,151 @@ static void il_op_graph_fcompound(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, 
 	il_op_param_2_with_rmode_arg("fcompound", op->op.fcompound, pure, f, pure, n, rmode);
 }
 
+static void il_op_graph_fexp(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fexp", op->op.fexp, f, rmode);
+}
+
+static void il_op_graph_fexpm1(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fexpm1", op->op.fexpm1, f, rmode);
+}
+
+static void il_op_graph_fexp2(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fexp2", op->op.fexp2, f, rmode);
+}
+
+static void il_op_graph_fexp2m1(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fexp2m1", op->op.fexp2m1, f, rmode);
+}
+
+static void il_op_graph_fexp10(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fexp10", op->op.fexp10, f, rmode);
+}
+
+static void il_op_graph_fexp10m1(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fexp10m1", op->op.fexp10m1, f, rmode);
+}
+
+static void il_op_graph_flog(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("flog", op->op.flog, f, rmode);
+}
+
+static void il_op_graph_flog2(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("flog2", op->op.flog2, f, rmode);
+}
+
+static void il_op_graph_flog10(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("flog10", op->op.flog10, f, rmode);
+}
+
+static void il_op_graph_flogp1(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("flogp1", op->op.flogp1, f, rmode);
+}
+
+static void il_op_graph_flog2p1(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("flog2p1", op->op.flog2p1, f, rmode);
+}
+
+static void il_op_graph_flog10p1(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("flog10p1", op->op.flog10p1, f, rmode);
+}
+
+static void il_op_graph_fsin(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fsin", op->op.fsin, f, rmode);
+}
+
+static void il_op_graph_fcos(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fcos", op->op.fcos, f, rmode);
+}
+
+static void il_op_graph_ftan(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("ftan", op->op.ftan, f, rmode);
+}
+
+static void il_op_graph_fsinpi(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fsinpi", op->op.fsinpi, f, rmode);
+}
+
+static void il_op_graph_fcospi(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fcospi", op->op.fcospi, f, rmode);
+}
+
+static void il_op_graph_ftanpi(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("ftanpi", op->op.ftanpi, f, rmode);
+}
+
+static void il_op_graph_fasin(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fasin", op->op.fasin, f, rmode);
+}
+
+static void il_op_graph_facos(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("facos", op->op.facos, f, rmode);
+}
+
+static void il_op_graph_fatan(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fatan", op->op.fatan, f, rmode);
+}
+
+static void il_op_graph_fasinpi(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fasinpi", op->op.fasinpi, f, rmode);
+}
+
+static void il_op_graph_facospi(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("facospi", op->op.facospi, f, rmode);
+}
+
+static void il_op_graph_fatanpi(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fatanpi", op->op.fatanpi, f, rmode);
+}
+
+static void il_op_graph_fsinh(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fsinh", op->op.fsinh, f, rmode);
+}
+
+static void il_op_graph_fcosh(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fcosh", op->op.fcosh, f, rmode);
+}
+
+static void il_op_graph_ftanh(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("ftanh", op->op.ftanh, f, rmode);
+}
+
+static void il_op_graph_fasinh(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fasinh", op->op.fasinh, f, rmode);
+}
+
+static void il_op_graph_facosh(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("facosh", op->op.facosh, f, rmode);
+}
+
+static void il_op_graph_fatanh(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_1_with_rmode_arg("fatanh", op->op.fatanh, f, rmode);
+}
+
+static void il_op_graph_fexcept(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	char *name = rz_str_newf("fexcept %s", rz_il_float_stringify_exception(op->op.fexcept.e));
+	if (!name) {
+		return;
+	}
+	RzGraphNode *to = graph_add_node_il(g, name);
+	free(name);
+	if (to) {
+		rz_graph_add_edge(g, from, to, NULL);
+		il_op_pure_graph_resolve(op->op.fexcept.x, g, to);
+	}
+}
+
+static void il_op_graph_fatan2(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_2_with_rmode_arg("fatan2", op->op.fatan2, pure, y, pure, x, rmode);
+}
+
+static void il_op_graph_fatan2pi(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_2_with_rmode_arg("fatan2pi", op->op.fatan2pi, pure, y, pure, x, rmode);
+}
+
+static void il_op_graph_fpowr(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
+	il_op_param_2_with_rmode_arg("fpowr", op->op.fpowr, pure, x, pure, y, rmode);
+}
+
 static void il_op_graph_load(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsLoad *opx = &op->op.load;
 	char *value = rz_str_newf("load: %u", opx->mem);
@@ -723,6 +868,9 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 	case RZ_IL_OP_FRSQRT:
 		il_op_graph_frsqrt(op, g, from);
 		return;
+	case RZ_IL_OP_FEXCEPT:
+		il_op_graph_fexcept(op, g, from);
+		break;
 	case RZ_IL_OP_FADD:
 		il_op_graph_fadd(op, g, from);
 		return;
@@ -755,6 +903,105 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 		return;
 	case RZ_IL_OP_FCOMPOUND:
 		il_op_graph_fcompound(op, g, from);
+		return;
+	case RZ_IL_OP_FEXP:
+		il_op_graph_fexp(op, g, from);
+		return;
+	case RZ_IL_OP_FEXPM1:
+		il_op_graph_fexpm1(op, g, from);
+		return;
+	case RZ_IL_OP_FEXP2:
+		il_op_graph_fexp2(op, g, from);
+		return;
+	case RZ_IL_OP_FEXP2M1:
+		il_op_graph_fexp2m1(op, g, from);
+		return;
+	case RZ_IL_OP_FEXP10:
+		il_op_graph_fexp10(op, g, from);
+		return;
+	case RZ_IL_OP_FEXP10M1:
+		il_op_graph_fexp10m1(op, g, from);
+		return;
+	case RZ_IL_OP_FLOG:
+		il_op_graph_flog(op, g, from);
+		return;
+	case RZ_IL_OP_FLOG2:
+		il_op_graph_flog2(op, g, from);
+		return;
+	case RZ_IL_OP_FLOG10:
+		il_op_graph_flog10(op, g, from);
+		return;
+	case RZ_IL_OP_FLOGP1:
+		il_op_graph_flogp1(op, g, from);
+		return;
+	case RZ_IL_OP_FLOG2P1:
+		il_op_graph_flog2p1(op, g, from);
+		return;
+	case RZ_IL_OP_FLOG10P1:
+		il_op_graph_flog10p1(op, g, from);
+		return;
+	case RZ_IL_OP_FSIN:
+		il_op_graph_fsin(op, g, from);
+		return;
+	case RZ_IL_OP_FCOS:
+		il_op_graph_fcos(op, g, from);
+		return;
+	case RZ_IL_OP_FTAN:
+		il_op_graph_ftan(op, g, from);
+		return;
+	case RZ_IL_OP_FSINPI:
+		il_op_graph_fsinpi(op, g, from);
+		return;
+	case RZ_IL_OP_FCOSPI:
+		il_op_graph_fcospi(op, g, from);
+		return;
+	case RZ_IL_OP_FTANPI:
+		il_op_graph_ftanpi(op, g, from);
+		return;
+	case RZ_IL_OP_FASIN:
+		il_op_graph_fasin(op, g, from);
+		return;
+	case RZ_IL_OP_FACOS:
+		il_op_graph_facos(op, g, from);
+		return;
+	case RZ_IL_OP_FATAN:
+		il_op_graph_fatan(op, g, from);
+		return;
+	case RZ_IL_OP_FASINPI:
+		il_op_graph_fasinpi(op, g, from);
+		return;
+	case RZ_IL_OP_FACOSPI:
+		il_op_graph_facospi(op, g, from);
+		return;
+	case RZ_IL_OP_FATANPI:
+		il_op_graph_fatanpi(op, g, from);
+		return;
+	case RZ_IL_OP_FSINH:
+		il_op_graph_fsinh(op, g, from);
+		return;
+	case RZ_IL_OP_FCOSH:
+		il_op_graph_fcosh(op, g, from);
+		return;
+	case RZ_IL_OP_FTANH:
+		il_op_graph_ftanh(op, g, from);
+		return;
+	case RZ_IL_OP_FASINH:
+		il_op_graph_fasinh(op, g, from);
+		return;
+	case RZ_IL_OP_FACOSH:
+		il_op_graph_facosh(op, g, from);
+		return;
+	case RZ_IL_OP_FATANH:
+		il_op_graph_fatanh(op, g, from);
+		return;
+	case RZ_IL_OP_FATAN2:
+		il_op_graph_fatan2(op, g, from);
+		return;
+	case RZ_IL_OP_FATAN2PI:
+		il_op_graph_fatan2pi(op, g, from);
+		return;
+	case RZ_IL_OP_FPOWR:
+		il_op_graph_fpowr(op, g, from);
 		return;
 
 	default:
