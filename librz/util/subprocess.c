@@ -741,6 +741,7 @@ RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
 #else // !__WINDOWS__
 
 #include <errno.h>
+#include <signal.h>
 #include <sys/wait.h>
 
 struct rz_subprocess_t {
@@ -1378,9 +1379,36 @@ RZ_API ssize_t rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, siz
 	if (proc->stdin_fd == -1) {
 		return written;
 	}
-	rz_sys_signal(SIGPIPE, SIG_IGN);
-	written = write(proc->stdin_fd, buf, buf_size);
-	rz_sys_signal(SIGPIPE, SIG_DFL);
+#if HAVE_SIGACTION
+	struct sigaction oldact = { 0 };
+	bool restore_sigpipe = false;
+	if (sigaction(SIGPIPE, NULL, &oldact) == 0 && oldact.sa_handler != SIG_IGN) {
+		struct sigaction ignact = { 0 };
+		ignact.sa_handler = SIG_IGN;
+		sigemptyset(&ignact.sa_mask);
+		if (sigaction(SIGPIPE, &ignact, NULL) == 0) {
+			restore_sigpipe = true;
+		}
+	}
+	do {
+		written = write(proc->stdin_fd, buf, buf_size);
+	} while (written < 0 && errno == EINTR);
+	if (restore_sigpipe) {
+		int saved_errno = errno;
+		sigaction(SIGPIPE, &oldact, NULL);
+		errno = saved_errno;
+	}
+#else
+	void (*old_handler)(int) = signal(SIGPIPE, SIG_IGN);
+	do {
+		written = write(proc->stdin_fd, buf, buf_size);
+	} while (written < 0 && errno == EINTR);
+	if (old_handler != SIG_IGN && old_handler != SIG_ERR) {
+		int saved_errno = errno;
+		signal(SIGPIPE, old_handler);
+		errno = saved_errno;
+	}
+#endif
 	return written;
 }
 

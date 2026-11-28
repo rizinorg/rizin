@@ -450,7 +450,12 @@ static bool has_file_arg(int argc, const char **argv, RzGetopt *opt) {
 	return (argc >= 2 && argv[opt->ind] && strcmp(argv[opt->ind], "--")) || ((!strcmp(argv[opt->ind - 1], "--") && argv[opt->ind]));
 }
 
+static int run_batch_worker(const char *argv0);
+
 RZ_API int rz_main_rizin(int argc, const char **argv) {
+	if (argc == 2 && !strcmp(argv[1], "--batch-worker")) {
+		return run_batch_worker(argv[0]);
+	}
 	RzCore *r;
 	bool forcequit = false;
 	bool cmd_had_error = false;
@@ -1726,5 +1731,422 @@ beach:
 	rz_vector_fini(&rizin_longopts);
 	rz_pvector_fini(&cmd_catalog_values);
 	RZ_FREE(pfile);
+	return ret;
+}
+
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#if __WINDOWS__
+#include <io.h>
+#include <rz_windows.h>
+#else
+#include <unistd.h>
+#endif
+
+#define RZ_BATCH_MAX_ARGC 4096
+
+static void reset_batch_process_state(void) {
+	rz_log_set_level(RZ_DEFAULT_LOGLVL);
+#if RZ_BUILD_DEBUG
+	rz_log_set_abortlevel(RZ_DEFAULT_LOGLVL_ABORT);
+#endif
+	rz_log_set_show_sources(false);
+	rz_log_set_colors(false);
+	rz_log_set_file(NULL);
+}
+
+static int batch_close(int fd) {
+#if __WINDOWS__
+	return _close(fd);
+#else
+	return close(fd);
+#endif
+}
+
+static int batch_dup(int fd) {
+#if __WINDOWS__
+	return _dup(fd);
+#else
+	return dup(fd);
+#endif
+}
+
+static int batch_dup2(int oldfd, int newfd) {
+#if __WINDOWS__
+	return _dup2(oldfd, newfd);
+#else
+	int rc;
+	do {
+		rc = dup2(oldfd, newfd);
+	} while (rc < 0 && errno == EINTR);
+	return rc;
+#endif
+}
+
+static void batch_set_cloexec(int fd) {
+	if (fd < 0) {
+		return;
+	}
+#if __WINDOWS__
+	intptr_t h = _get_osfhandle(fd);
+	if (h != -1) {
+		SetHandleInformation((HANDLE)h, HANDLE_FLAG_INHERIT, 0);
+	}
+#else
+	int flags = fcntl(fd, F_GETFD);
+	if (flags >= 0) {
+		(void)fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+	}
+#endif
+}
+
+static bool batch_parse_ulong(const char *s, unsigned long max_val, unsigned long *out) {
+	if (!s || !isdigit((unsigned char)*s)) {
+		return false;
+	}
+	char *end = NULL;
+	errno = 0;
+	unsigned long val = strtoul(s, &end, 10);
+	if (errno == ERANGE || end == s || *end != '\0' || val > max_val) {
+		return false;
+	}
+	*out = val;
+	return true;
+}
+
+static bool batch_read_exact(FILE *fp, char *dst, size_t n) {
+	size_t got = 0;
+	while (got < n) {
+		errno = 0;
+		size_t r = fread(dst + got, 1, n - got, fp);
+		if (r == 0) {
+#if !__WINDOWS__
+			if (ferror(fp) && errno == EINTR) {
+				clearerr(fp);
+				continue;
+			}
+#endif
+			return false;
+		}
+		got += r;
+	}
+	return true;
+}
+
+static bool batch_read_line(FILE *fp, char *buf, size_t cap) {
+	if (!cap) {
+		return false;
+	}
+	size_t len = 0;
+	while (len + 1 < cap) {
+		errno = 0;
+		int ch = fgetc(fp);
+		if (ch == EOF) {
+#if !__WINDOWS__
+			if (ferror(fp) && errno == EINTR) {
+				clearerr(fp);
+				continue;
+			}
+#endif
+			return false;
+		}
+		if (ch == '\n') {
+			if (len > 0 && buf[len - 1] == '\r') {
+				len--;
+			}
+			buf[len] = '\0';
+			return true;
+		}
+		buf[len++] = (char)ch;
+	}
+	return false;
+}
+
+static bool batch_reset_fd(int fd) {
+#if __WINDOWS__
+	return _lseeki64(fd, 0, SEEK_SET) == 0 && _chsize_s(fd, 0) == 0;
+#else
+	if (lseek(fd, 0, SEEK_SET) != 0) {
+		return false;
+	}
+	int rc;
+	do {
+		rc = ftruncate(fd, 0);
+	} while (rc < 0 && errno == EINTR);
+	return rc == 0;
+#endif
+}
+
+static st64 batch_fd_size(int fd) {
+#if __WINDOWS__
+	return (st64)_lseeki64(fd, 0, SEEK_END);
+#else
+	return (st64)lseek(fd, 0, SEEK_END);
+#endif
+}
+
+static bool batch_copy_fd_to_fp(int fd, size_t len, FILE *dst) {
+	if (!len) {
+		return true;
+	}
+#if __WINDOWS__
+	if (_lseeki64(fd, 0, SEEK_SET) != 0) {
+		return false;
+	}
+#else
+	if (lseek(fd, 0, SEEK_SET) != 0) {
+		return false;
+	}
+#endif
+	ut8 chunk[16384];
+	size_t remaining = len;
+	while (remaining > 0) {
+		size_t want = RZ_MIN(remaining, sizeof(chunk));
+#if __WINDOWS__
+		int r = _read(fd, chunk, (unsigned int)want);
+#else
+		ssize_t r;
+		do {
+			r = read(fd, chunk, want);
+		} while (r < 0 && errno == EINTR);
+#endif
+		if (r <= 0) {
+			return false;
+		}
+		if (fwrite(chunk, 1, (size_t)r, dst) != (size_t)r) {
+			return false;
+		}
+		remaining -= (size_t)r;
+	}
+	return true;
+}
+
+/**
+ * \brief Persistent stdin/stdout worker loop for rz-test.
+ *
+ * Reads length-prefixed ITEM requests on stdin, runs each invocation in a fresh
+ * RzCore via rz_main_rizin() with stdout/stderr captured into seekable temp
+ * files, and writes a single length-prefixed RESULT packet on the control
+ * stdout channel.
+ */
+static int run_batch_worker(const char *argv0) {
+	int ctrl_in_fd = batch_dup(0);
+	int ctrl_fd = batch_dup(1);
+	int orig_err_fd = batch_dup(2);
+	if (ctrl_in_fd < 0 || ctrl_fd < 0 || orig_err_fd < 0) {
+		if (ctrl_in_fd >= 0) {
+			batch_close(ctrl_in_fd);
+		}
+		if (ctrl_fd >= 0) {
+			batch_close(ctrl_fd);
+		}
+		if (orig_err_fd >= 0) {
+			batch_close(orig_err_fd);
+		}
+		return 1;
+	}
+	batch_set_cloexec(ctrl_in_fd);
+	batch_set_cloexec(ctrl_fd);
+	batch_set_cloexec(orig_err_fd);
+#if __WINDOWS__
+	(void)_setmode(ctrl_in_fd, _O_BINARY);
+	(void)_setmode(ctrl_fd, _O_BINARY);
+	FILE *ctrl_in = _fdopen(ctrl_in_fd, "rb");
+	FILE *ctrl_fp = _fdopen(ctrl_fd, "wb");
+	int devnull_fd = _open("NUL", _O_RDONLY | _O_NOINHERIT);
+#else
+	FILE *ctrl_in = fdopen(ctrl_in_fd, "rb");
+	FILE *ctrl_fp = fdopen(ctrl_fd, "wb");
+	int devnull_fd;
+	do {
+		devnull_fd = open("/dev/null", O_RDONLY);
+	} while (devnull_fd < 0 && errno == EINTR);
+#endif
+	batch_set_cloexec(devnull_fd);
+	if (!ctrl_in || !ctrl_fp || devnull_fd < 0) {
+		if (devnull_fd >= 0) {
+			batch_close(devnull_fd);
+		}
+		if (ctrl_in) {
+			fclose(ctrl_in);
+		} else {
+			batch_close(ctrl_in_fd);
+		}
+		if (ctrl_fp) {
+			fclose(ctrl_fp);
+		} else {
+			batch_close(ctrl_fd);
+		}
+		batch_close(orig_err_fd);
+		return 1;
+	}
+
+	char *out_path = NULL;
+	char *err_path = NULL;
+	int out_fd = rz_file_mkstemp("rz-worker-out", &out_path);
+	int err_fd = rz_file_mkstemp("rz-worker-err", &err_path);
+	batch_set_cloexec(out_fd);
+	batch_set_cloexec(err_fd);
+	if (out_fd < 0 || err_fd < 0) {
+		if (out_fd >= 0) {
+			batch_close(out_fd);
+		}
+		if (err_fd >= 0) {
+			batch_close(err_fd);
+		}
+		if (out_path) {
+			rz_file_rm(out_path);
+			free(out_path);
+		}
+		if (err_path) {
+			rz_file_rm(err_path);
+			free(err_path);
+		}
+		batch_close(devnull_fd);
+		batch_close(orig_err_fd);
+		fclose(ctrl_in);
+		fclose(ctrl_fp);
+		return 1;
+	}
+#if !__WINDOWS__
+	// Unlink immediately on POSIX so OS reclaims temp files even on SIGKILL.
+	rz_file_rm(out_path);
+	rz_file_rm(err_path);
+	RZ_FREE(out_path);
+	RZ_FREE(err_path);
+#endif
+
+	char *orig_cwd = rz_sys_getdir();
+	int ret = 0;
+	char hdr[128];
+
+	while (batch_read_line(ctrl_in, hdr, sizeof(hdr))) {
+		if (strncmp(hdr, "ITEM ", 5) != 0) {
+			ret = 1;
+			break;
+		}
+		unsigned long arg_count = 0;
+		if (!batch_parse_ulong(hdr + 5, RZ_BATCH_MAX_ARGC, &arg_count) || arg_count == 0) {
+			ret = 1;
+			break;
+		}
+
+		char **owned_args = RZ_NEWS0(char *, arg_count);
+		// Allocate arg_count + 2 slots so item_argv[arg_count + 1] is NULL per C argv convention.
+		const char **item_argv = RZ_NEWS0(const char *, arg_count + 2);
+		if (!owned_args || !item_argv) {
+			free(owned_args);
+			free(item_argv);
+			ret = 1;
+			break;
+		}
+		item_argv[0] = argv0 ? argv0 : "rizin";
+		bool parse_ok = true;
+		bool nested_worker = false;
+		const unsigned long max_arg_len = RZ_MIN(16UL * 1024 * 1024, (unsigned long)INT_MAX - 1);
+		for (unsigned long i = 0; i < arg_count; i++) {
+			if (!batch_read_line(ctrl_in, hdr, sizeof(hdr)) || strncmp(hdr, "ARG ", 4) != 0) {
+				parse_ok = false;
+				break;
+			}
+			unsigned long arg_len = 0;
+			if (!batch_parse_ulong(hdr + 4, max_arg_len, &arg_len)) {
+				parse_ok = false;
+				break;
+			}
+			owned_args[i] = malloc(arg_len + 1);
+			if (!owned_args[i] || !batch_read_exact(ctrl_in, owned_args[i], arg_len)) {
+				parse_ok = false;
+				break;
+			}
+			owned_args[i][arg_len] = '\0';
+			char trail = '\0';
+			if (!batch_read_exact(ctrl_in, &trail, 1) || trail != '\n') {
+				parse_ok = false;
+				break;
+			}
+			item_argv[i + 1] = owned_args[i];
+			if (!strcmp(owned_args[i], "--batch-worker")) {
+				nested_worker = true;
+			}
+		}
+
+		if (!parse_ok || nested_worker) {
+			for (unsigned long i = 0; i < arg_count; i++) {
+				free(owned_args[i]);
+			}
+			free(owned_args);
+			free(item_argv);
+			ret = 1;
+			break;
+		}
+
+		reset_batch_process_state();
+		fflush(stdout);
+		fflush(stderr);
+		if (!batch_reset_fd(out_fd) || !batch_reset_fd(err_fd) ||
+			batch_dup2(devnull_fd, 0) < 0 || batch_dup2(out_fd, 1) < 0 || batch_dup2(err_fd, 2) < 0) {
+			for (unsigned long i = 0; i < arg_count; i++) {
+				free(owned_args[i]);
+			}
+			free(owned_args);
+			free(item_argv);
+			ret = 1;
+			break;
+		}
+		clearerr(stdin);
+		clearerr(stdout);
+		clearerr(stderr);
+
+		int item_rc = rz_main_rizin((int)(arg_count + 1), item_argv);
+
+		fflush(stdout);
+		fflush(stderr);
+		for (unsigned long i = 0; i < arg_count; i++) {
+			free(owned_args[i]);
+		}
+		free(owned_args);
+		free(item_argv);
+
+		reset_batch_process_state();
+		st64 out_sz = batch_fd_size(out_fd);
+		st64 err_sz = batch_fd_size(err_fd);
+		if (out_sz < 0 || err_sz < 0 ||
+			out_sz > (st64)INT_MAX - 1 || err_sz > (st64)INT_MAX - 1 ||
+			fprintf(ctrl_fp, "RESULT %d %" PFMT64d " %" PFMT64d "\n", item_rc, out_sz, err_sz) < 0 ||
+			!batch_copy_fd_to_fp(out_fd, (size_t)out_sz, ctrl_fp) ||
+			!batch_copy_fd_to_fp(err_fd, (size_t)err_sz, ctrl_fp) ||
+			fflush(ctrl_fp) != 0) {
+			ret = 1;
+			break;
+		}
+		if (orig_cwd && !rz_sys_chdir(orig_cwd)) {
+			ret = 1;
+			break;
+		}
+	}
+
+	fflush(stdout);
+	fflush(stderr);
+	(void)batch_dup2(orig_err_fd, 2);
+	clearerr(stderr);
+	batch_close(orig_err_fd);
+
+	free(orig_cwd);
+	batch_close(devnull_fd);
+	batch_close(out_fd);
+	batch_close(err_fd);
+	if (out_path) {
+		rz_file_rm(out_path);
+		free(out_path);
+	}
+	if (err_path) {
+		rz_file_rm(err_path);
+		free(err_path);
+	}
+	fclose(ctrl_in);
+	fclose(ctrl_fp);
 	return ret;
 }

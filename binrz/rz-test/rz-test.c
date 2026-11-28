@@ -7,6 +7,9 @@
 #include <rz_main.h>
 #include <rz_windows.h>
 #include <rz_util/rz_print.h>
+#if __UNIX__
+#include <signal.h>
+#endif
 
 #define Color_INSERT   Color_BGREEN
 #define Color_DELETE   Color_BRED
@@ -39,6 +42,7 @@ typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
 	bool no_diffing; // disable diffing unless the tests fails.
+	bool use_worker; // reuse persistent rizin --batch-worker per thread
 	RzTestDatabase *db;
 	PJ *test_results;
 
@@ -220,6 +224,8 @@ int rz_test_main(int argc, const char **argv) {
 				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	}
+#elif __UNIX__
+	rz_sys_signal(SIGPIPE, SIG_IGN);
 #endif
 
 	if (!except_dir) {
@@ -504,6 +510,18 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	if (rz_pvector_len(&state.db->tests) != 0) {
+#if __WINDOWS__
+		// Pre-existing Windows subprocess_wait() overlapped I/O cancellation issues break persistent workers.
+		state.use_worker = false;
+#else
+		char *no_batch_env = rz_sys_getenv("RZ_TEST_NO_BATCH");
+		char *lsan_env = rz_sys_getenv("LSAN_OPTIONS");
+		// Keep per-test subprocesses under LSan log collection so leak stacks stay per-test.
+		state.use_worker = (RZ_STR_ISEMPTY(no_batch_env) || !strcmp(no_batch_env, "0")) &&
+			RZ_STR_ISEMPTY(lsan_env);
+		free(no_batch_env);
+		free(lsan_env);
+#endif
 		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
 	} else {
 		eprintf("No tests discovered\n");
@@ -515,7 +533,7 @@ int rz_test_main(int argc, const char **argv) {
 		state.path_left = ht_sp_new(HT_STR_DUP, NULL, free);
 		if (state.path_left) {
 			void **it;
-			rz_pvector_foreach (&state.queue, it) {
+			rz_pvector_foreach (&state.db->tests, it) {
 				RzTest *test = *it;
 				RzTestFileCounts *counts = ht_sp_find(state.path_left, test->path, NULL);
 				if (!counts) {
@@ -695,7 +713,53 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	pj_end(pj);
 }
 
+static void record_test_result_locked(RzTestState *state, RzTestResultInfo *result) {
+	RzTest *test = result->test;
+	rz_pvector_push(&state->results, result);
+	if (!log_mode) {
+		switch (result->result) {
+		case RZ_TEST_RESULT_OK:
+			state->ok_count++;
+			break;
+		case RZ_TEST_RESULT_FAILED:
+			state->xx_count++;
+			break;
+		case RZ_TEST_RESULT_BROKEN:
+			state->br_count++;
+			break;
+		case RZ_TEST_RESULT_FIXED:
+			state->fx_count++;
+			break;
+		}
+	}
+	if (state->path_left) {
+		RzTestFileCounts *counts = ht_sp_find(state->path_left, test->path, NULL);
+		if (counts) {
+			switch (result->result) {
+			case RZ_TEST_RESULT_OK:
+				counts->ok++;
+				break;
+			case RZ_TEST_RESULT_FAILED:
+				counts->xx++;
+				break;
+			case RZ_TEST_RESULT_BROKEN:
+				counts->br++;
+				break;
+			case RZ_TEST_RESULT_FIXED:
+				counts->fx++;
+				break;
+			}
+			counts->total_elapsed += result->time_elapsed;
+			counts->tests_left--;
+			if (!counts->tests_left) {
+				rz_pvector_push(&state->completed_paths, (void *)test->path);
+			}
+		}
+	}
+}
+
 static void *worker_th(RzTestState *state) {
+	RzTestRizinWorker *worker = NULL;
 	rz_th_lock_enter(state->lock);
 	while (true) {
 		if (rz_pvector_empty(&state->queue)) {
@@ -704,53 +768,16 @@ static void *worker_th(RzTestState *state) {
 		RzTest *test = rz_pvector_pop(&state->queue);
 		rz_th_lock_leave(state->lock);
 
-		RzTestResultInfo *result = rz_test_run_test(&state->run_config, test);
+		RzTestResultInfo *result = state->use_worker
+			? rz_test_run_test_with_worker(&state->run_config, test, &worker)
+			: rz_test_run_test(&state->run_config, test);
 
 		rz_th_lock_enter(state->lock);
-		rz_pvector_push(&state->results, result);
-		if (!log_mode) {
-			switch (result->result) {
-			case RZ_TEST_RESULT_OK:
-				state->ok_count++;
-				break;
-			case RZ_TEST_RESULT_FAILED:
-				state->xx_count++;
-				break;
-			case RZ_TEST_RESULT_BROKEN:
-				state->br_count++;
-				break;
-			case RZ_TEST_RESULT_FIXED:
-				state->fx_count++;
-				break;
-			}
-		}
-		if (state->path_left) {
-			RzTestFileCounts *counts = ht_sp_find(state->path_left, test->path, NULL);
-			if (counts) {
-				switch (result->result) {
-				case RZ_TEST_RESULT_OK:
-					counts->ok++;
-					break;
-				case RZ_TEST_RESULT_FAILED:
-					counts->xx++;
-					break;
-				case RZ_TEST_RESULT_BROKEN:
-					counts->br++;
-					break;
-				case RZ_TEST_RESULT_FIXED:
-					counts->fx++;
-					break;
-				}
-				counts->total_elapsed += result->time_elapsed;
-				counts->tests_left--;
-				if (!counts->tests_left) {
-					rz_pvector_push(&state->completed_paths, (void *)test->path);
-				}
-			}
-		}
+		record_test_result_locked(state, result);
 		rz_th_cond_signal(state->cond);
 	}
 	rz_th_lock_leave(state->lock);
+	rz_test_rizin_worker_free(worker);
 	return NULL;
 }
 

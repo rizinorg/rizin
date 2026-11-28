@@ -5,6 +5,9 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_regex.h>
 #include <rz_cons.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 
 #if __WINDOWS__
 static ut8 *crlf2lf(ut8 *str) {
@@ -22,8 +25,22 @@ static ut8 *crlf2lf(ut8 *str) {
 	*dest = '\0';
 	return str;
 }
+
+static size_t crlf2lf_len(ut8 *str, size_t len) {
+	size_t r = 0, w = 0;
+	while (r < len) {
+		if (r + 1 < len && str[r] == '\r' && str[r + 1] == '\n') {
+			r++;
+			continue;
+		}
+		str[w++] = str[r++];
+	}
+	str[w] = '\0';
+	return w;
+}
 #else
-#define crlf2lf(x) (x)
+#define crlf2lf(x)        (x)
+#define crlf2lf_len(x, l) (l)
 #endif
 
 static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
@@ -374,6 +391,680 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 		return false;
 	}
 	return true;
+}
+
+static bool is_cmd_delim(char c) {
+	return c == '\0' || c == ' ' || c == '\t' || c == '\r' || c == '\n' ||
+		c == ';' || c == '|' || c == '&' || c == '>' || c == '"' || c == '\'';
+}
+
+static bool test_path_is_archos(const char *path) {
+	if (RZ_STR_ISEMPTY(path)) {
+		return false;
+	}
+	return strstr(path, "archos/") != NULL || strstr(path, "archos\\") != NULL;
+}
+
+static bool cmds_contain_process_mutating_op(const char *cmds) {
+	if (RZ_STR_ISEMPTY(cmds)) {
+		return false;
+	}
+	if (strchr(cmds, '`') || strstr(cmds, "$(") ||
+		strstr(cmds, "cfg.debug") || strstr(cmds, "dir.home") || strstr(cmds, "dir.tmp") ||
+		strstr(cmds, "dbg://") || strstr(cmds, "gdb://") || strstr(cmds, "ptrace://") ||
+		strstr(cmds, "self://") || strstr(cmds, "winedbg://")) {
+		return true;
+	}
+	const char *p = cmds;
+	bool at_cmd_start = true;
+	while (*p) {
+		if (at_cmd_start) {
+			while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' || *p == ';' || *p == '"') {
+				p++;
+			}
+			while (*p >= '0' && *p <= '9') {
+				p++;
+			}
+			if (!*p) {
+				break;
+			}
+			if (*p == '!') {
+				return true;
+			}
+			if (p[0] == '#' && p[1] == '!') {
+				return true;
+			}
+			if (p[0] == 'R' && p[1] == '+') {
+				return true;
+			}
+			if (p[0] == '=' && (p[1] == 'h' || p[1] == 'H' || p[1] == '&')) {
+				return true;
+			}
+			if (p[0] == 'q' && p[1] == '!') {
+				return true;
+			}
+			if (p[0] == 'c' && p[1] == 'd' && is_cmd_delim(p[2])) {
+				return true;
+			}
+			if (p[0] == 'e' && p[1] == 'n' && p[2] == 'v' && is_cmd_delim(p[3])) {
+				return true;
+			}
+			if (p[0] == 'o' && p[1] == 'o' && p[2] == 'd') {
+				return true;
+			}
+			if (p[0] == 'd' && p[1] == 'o' &&
+				(is_cmd_delim(p[2]) ||
+					((p[2] == 'o' || p[2] == 'r' || p[2] == 'e' || p[2] == 'c') && is_cmd_delim(p[3])))) {
+				return true;
+			}
+			if (p[0] == 'L' && (p[1] == ' ' || p[1] == '\t' || p[1] == '-')) {
+				return true;
+			}
+			if (p[0] == '.' && (p[1] == ' ' || p[1] == '\t' || p[1] == '!')) {
+				return true;
+			}
+			at_cmd_start = false;
+		}
+		if (*p == '\n' || *p == ';' || *p == '|') {
+			at_cmd_start = true;
+		} else if (p[0] == '&' && p[1] == '&') {
+			at_cmd_start = true;
+			p += 2;
+			continue;
+		} else if (*p == '"') {
+			const char *q = p + 1;
+			while (*q == ' ' || *q == '\t') {
+				q++;
+			}
+			if (*q == '!') {
+				return true;
+			}
+		}
+		p++;
+	}
+	return false;
+}
+
+static bool args_contain_unsafe_batch_flag(const char *args_str) {
+	if (RZ_STR_ISEMPTY(args_str)) {
+		return false;
+	}
+	if (strstr(args_str, "dir.home") || strstr(args_str, "dir.tmp") || strstr(args_str, "cfg.debug")) {
+		return true;
+	}
+	const char *p = args_str;
+	while (*p) {
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+		if (!*p) {
+			break;
+		}
+		const char *tok = p;
+		while (*p && *p != ' ' && *p != '\t') {
+			p++;
+		}
+		size_t len = (size_t)(p - tok);
+		if (len >= 2 && tok[0] == '-') {
+			if (tok[1] == '-') {
+				return true;
+			}
+			// Check short option cluster for flags mutating fds, debugger, scripts, plugins, profiles, remote, or pipes.
+			for (size_t i = 1; i < len; i++) {
+				char ch = tok[i];
+				if (ch == 'd' || ch == 'D' || ch == '1' || ch == '2' || ch == '0' || ch == 'C' ||
+					ch == '=' || ch == 'c' || ch == 'i' || ch == 'I' || ch == 'l' || ch == 'r' || ch == 'R') {
+					return true;
+				}
+				// Stop scanning once a flag that consumes the rest of the token as its value is reached.
+				if (ch == 'a' || ch == 'b' || ch == 'B' || ch == 'e' || ch == 'E' ||
+					ch == 'F' || ch == 'H' || ch == 'k' || ch == 'm' || ch == 'p' || ch == 's') {
+					break;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+static bool files_contain_unsafe_batch_target(const char *file_str) {
+	if (RZ_STR_ISEMPTY(file_str)) {
+		return false;
+	}
+	const char *p = file_str;
+	while (*p) {
+		const char *nl = strchr(p, '\n');
+		size_t len = nl ? (size_t)(nl - p) : strlen(p);
+		if (len == 1 && p[0] == '-') {
+			return true;
+		}
+		if ((len >= 6 && !strncmp(p, "dbg://", 6)) ||
+			(len >= 6 && !strncmp(p, "gdb://", 6)) ||
+			(len >= 9 && !strncmp(p, "ptrace://", 9)) ||
+			(len >= 7 && !strncmp(p, "self://", 7)) ||
+			(len >= 10 && !strncmp(p, "winedbg://", 10))) {
+			return true;
+		}
+		if (!nl) {
+			break;
+		}
+		p = nl + 1;
+	}
+	return false;
+}
+
+/**
+ * \brief Return true if a cmd test can safely run inside a batched rizin worker.
+ */
+RZ_API bool rz_test_cmd_test_batchable(RZ_NONNULL const RzCmdTest *test) {
+	rz_return_val_if_fail(test, false);
+	if (RZ_STR_ISNOTEMPTY(test->tool.value) || RZ_STR_ISNOTEMPTY(test->envs.value) ||
+		test->load_plugins || test->color.value || test->utf8.value || test->timeout.set) {
+		return false;
+	}
+	if (args_contain_unsafe_batch_flag(test->args.value)) {
+		return false;
+	}
+	if (files_contain_unsafe_batch_target(test->file.value)) {
+		return false;
+	}
+	if (cmds_contain_process_mutating_op(test->cmds.value)) {
+		return false;
+	}
+	return true;
+}
+
+static bool parse_worker_result_header(const char *line, int *rc_out, size_t *out_len_out, size_t *err_len_out) {
+	if (!line || strncmp(line, "RESULT ", 7) != 0) {
+		return false;
+	}
+	const char *p1 = line + 7;
+	if (*p1 != '-' && !isdigit((unsigned char)*p1)) {
+		return false;
+	}
+	if (*p1 == '-' && !isdigit((unsigned char)p1[1])) {
+		return false;
+	}
+	char *end1 = NULL;
+	errno = 0;
+	long rc = strtol(p1, &end1, 10);
+	if (errno == ERANGE || end1 == p1 || *end1 != ' ' || rc < INT_MIN || rc > INT_MAX) {
+		return false;
+	}
+
+	const char *p2 = end1 + 1;
+	if (!isdigit((unsigned char)*p2)) {
+		return false;
+	}
+	char *end2 = NULL;
+	errno = 0;
+	unsigned long long olen = strtoull(p2, &end2, 10);
+	if (errno == ERANGE || end2 == p2 || *end2 != ' ' || olen > (unsigned long long)INT_MAX - 1) {
+		return false;
+	}
+
+	const char *p3 = end2 + 1;
+	if (!isdigit((unsigned char)*p3)) {
+		return false;
+	}
+	char *end3 = NULL;
+	errno = 0;
+	unsigned long long elen = strtoull(p3, &end3, 10);
+	if (errno == ERANGE || end3 == p3 || *end3 != '\0' || elen > (unsigned long long)INT_MAX - 1) {
+		return false;
+	}
+
+	*rc_out = (int)rc;
+	*out_len_out = (size_t)olen;
+	*err_len_out = (size_t)elen;
+	return true;
+}
+
+static bool append_batch_item_args(RzStrBuf *sb, const RzPVector /*<const char *>*/ *args) {
+	size_t n = rz_pvector_len(args);
+	if (!n) {
+		return false;
+	}
+	rz_strbuf_appendf(sb, "ITEM %" PFMTSZu "\n", n);
+	for (size_t i = 0; i < n; i++) {
+		const char *arg = rz_pvector_at(args, i);
+		if (!arg) {
+			arg = "";
+		}
+		size_t alen = strlen(arg);
+		rz_strbuf_appendf(sb, "ARG %" PFMTSZu "\n", alen);
+		rz_strbuf_append_n(sb, arg, alen);
+		rz_strbuf_append_n(sb, "\n", 1);
+	}
+	return true;
+}
+
+#define WORKER_MAX_REQUESTS       256
+#define WORKER_READ_BUF_CAP       4096
+#define WORKER_MIN_RESULT_HDR_LEN 13 // strlen("RESULT 0 0 0\n")
+
+struct rz_test_rizin_worker_t {
+	RzSubprocess *proc;
+	size_t requests;
+	ut8 rbuf[WORKER_READ_BUF_CAP];
+	size_t rbuf_pos;
+	size_t rbuf_len;
+};
+
+static bool worker_write_all(RzSubprocess *proc, const ut8 *buf, size_t len) {
+	size_t off = 0;
+	while (off < len) {
+#if !__WINDOWS__
+		errno = 0;
+#endif
+		ssize_t w = rz_subprocess_stdin_write(proc, buf + off, len - off);
+		if (w < 0) {
+#if !__WINDOWS__
+			if (errno == EINTR) {
+				continue;
+			}
+#endif
+			return false;
+		}
+		if (w == 0) {
+			return false;
+		}
+		off += (size_t)w;
+	}
+	return true;
+}
+
+static size_t worker_read_chunk(RzSubprocess *proc, ut8 *dst, size_t want, ut64 deadline_us, bool *timedout) {
+	ut64 now = rz_time_now_mono();
+	if (deadline_us != UT64_MAX && now >= deadline_us) {
+		*timedout = true;
+		return 0;
+	}
+	ut64 rem_ms = deadline_us == UT64_MAX ? UT64_MAX : ((deadline_us - now + 999) / 1000);
+	if (rem_ms == 0) {
+		rem_ms = 1;
+	}
+	RzStrBuf *sb = rz_subprocess_stdout_read(proc, want, rem_ms);
+	size_t n = sb ? rz_strbuf_length(sb) : 0;
+	if (!n) {
+		if (deadline_us != UT64_MAX && rz_time_now_mono() >= deadline_us) {
+			*timedout = true;
+		}
+		return 0;
+	}
+	if (n > want) {
+		n = want;
+	}
+	memcpy(dst, rz_strbuf_get(sb), n);
+	return n;
+}
+
+static bool worker_read_exact(RzTestRizinWorker *worker, ut8 *dst, size_t want, ut64 deadline_us, bool *timedout) {
+	size_t got = 0;
+	if (worker->rbuf_pos < worker->rbuf_len) {
+		size_t avail = worker->rbuf_len - worker->rbuf_pos;
+		size_t take = RZ_MIN(avail, want);
+		memcpy(dst, worker->rbuf + worker->rbuf_pos, take);
+		worker->rbuf_pos += take;
+		got += take;
+	}
+	while (got < want) {
+		size_t n = worker_read_chunk(worker->proc, dst + got, want - got, deadline_us, timedout);
+		if (!n) {
+			return false;
+		}
+		got += n;
+	}
+	return true;
+}
+
+static bool worker_read_line(RzTestRizinWorker *worker, char *buf, size_t cap, ut64 deadline_us, bool *timedout) {
+	size_t len = 0;
+	size_t spaces = 0;
+	while (len + 1 < cap) {
+		if (worker->rbuf_pos >= worker->rbuf_len) {
+			size_t need = 1;
+			if (len < WORKER_MIN_RESULT_HDR_LEN) {
+				need = WORKER_MIN_RESULT_HDR_LEN - len;
+			} else if (spaces < 2) {
+				need = 4;
+			} else if (spaces == 2) {
+				need = 2;
+			}
+			need = RZ_MIN(need, sizeof(worker->rbuf));
+			size_t n = worker_read_chunk(worker->proc, worker->rbuf, need, deadline_us, timedout);
+			if (!n) {
+				return false;
+			}
+			worker->rbuf_pos = 0;
+			worker->rbuf_len = n;
+		}
+		while (worker->rbuf_pos < worker->rbuf_len && len + 1 < cap) {
+			ut8 ch = worker->rbuf[worker->rbuf_pos++];
+			if (ch == '\n') {
+				if (len > 0 && buf[len - 1] == '\r') {
+					len--;
+				}
+				buf[len] = '\0';
+				return true;
+			}
+			if (ch == ' ') {
+				spaces++;
+			}
+			buf[len++] = (char)ch;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Spawn a persistent rizin --batch-worker subprocess for a worker thread.
+ */
+RZ_API RZ_OWN RzTestRizinWorker *rz_test_rizin_worker_new(RZ_NONNULL RzTestRunConfig *config) {
+	rz_return_val_if_fail(config, NULL);
+	char *exe = rz_test_find_executable("rizin", config->bin_path);
+	if (!exe) {
+		return NULL;
+	}
+	const char *args[] = { "--batch-worker" };
+	const char *envvars[] = {
+#if __WINDOWS__
+		"ANSICON",
+#endif
+		"RZ_COLOR",
+		"RZ_UTF8",
+		"RZ_NOPLUGINS",
+	};
+	const char *envvals[] = {
+#if __WINDOWS__
+		"1",
+#endif
+		"0",
+		"0",
+		"1",
+	};
+	RzSubprocessOpt opt = {
+		.file = exe,
+		.args = args,
+		.args_size = RZ_ARRAY_SIZE(args),
+		.envvars = envvars,
+		.envvals = envvals,
+		.env_size = RZ_ARRAY_SIZE(envvars),
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
+	};
+	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
+	free(exe);
+	if (!proc) {
+		return NULL;
+	}
+	RzTestRizinWorker *w = RZ_NEW0(RzTestRizinWorker);
+	if (!w) {
+		rz_subprocess_kill(proc);
+		rz_subprocess_free(proc);
+		return NULL;
+	}
+	w->proc = proc;
+	return w;
+}
+
+/**
+ * \brief Gracefully stop and free a persistent rizin worker subprocess.
+ */
+RZ_API void rz_test_rizin_worker_free(RZ_NULLABLE RzTestRizinWorker *worker) {
+	if (!worker) {
+		return;
+	}
+	if (worker->proc) {
+		if (rz_subprocess_wait(worker->proc, 5000) == RZ_SUBPROCESS_TIMEDOUT) {
+			rz_subprocess_kill(worker->proc);
+			rz_subprocess_wait(worker->proc, 1000);
+		}
+		rz_subprocess_free(worker->proc);
+	}
+	free(worker);
+}
+
+static void rz_test_rizin_worker_kill(RzTestRizinWorker **worker_slot) {
+	if (!worker_slot || !*worker_slot) {
+		return;
+	}
+	RzTestRizinWorker *w = *worker_slot;
+	if (w->proc) {
+		rz_subprocess_kill(w->proc);
+		rz_subprocess_wait(w->proc, 1000);
+		rz_subprocess_free(w->proc);
+	}
+	free(w);
+	*worker_slot = NULL;
+}
+
+static RzSubprocessOutput *run_test_in_worker(RzTestRunConfig *config, RzTest *test, RzTestRizinWorker **worker_slot, bool *proto_ok, bool *timedout_out) {
+	*proto_ok = false;
+	if (timedout_out) {
+		*timedout_out = false;
+	}
+	RzList /*<char *>*/ *extra_args = NULL;
+	RzList /*<char *>*/ *files = NULL;
+	const char *cmds = NULL;
+	if (test->type == RZ_TEST_TYPE_CMD) {
+		RzCmdTest *ct = test->cmd_test;
+		extra_args = ct->args.value ? rz_str_split_duplist(ct->args.value, " ", true) : NULL;
+		files = ct->file.value ? rz_str_split_duplist(ct->file.value, "\n", true) : NULL;
+		RzListIter *it, *tmpit;
+		char *tok;
+		rz_list_foreach_safe (extra_args, it, tmpit, tok) {
+			if (!*tok) {
+				rz_list_delete(extra_args, it);
+			}
+		}
+		rz_list_foreach_safe (files, it, tmpit, tok) {
+			if (!*tok) {
+				rz_list_delete(files, it);
+			}
+		}
+		if (rz_list_empty(files)) {
+			if (!files) {
+				files = rz_list_new();
+			} else {
+				files->free = NULL;
+			}
+			rz_list_push(files, "=");
+		}
+		cmds = ct->cmds.value;
+	} else if (test->type == RZ_TEST_TYPE_JSON) {
+		files = rz_list_new();
+		rz_list_push(files, (void *)config->json_test_file);
+		cmds = test->json_test->cmd;
+	} else {
+		return NULL;
+	}
+
+	RunRzTest rrt = {
+		.config = config,
+		.timeout_ms = config->timeout_ms,
+		.bin_path = config->bin_path,
+		.tool = NULL,
+		.cmds = cmds,
+		.envs = NULL,
+		.files = files,
+		.extra_args = extra_args,
+		.load_plugins = false,
+		.color = false,
+		.utf8 = false,
+		.runner = NULL,
+		.user = NULL,
+	};
+	RzPVector /*<const char *>*/ args;
+#if __WINDOWS__
+	char *wcmds = convert_win_cmds(rrt.cmds);
+	run_rz_test_init_args(&rrt, wcmds, &args);
+#else
+	run_rz_test_init_args(&rrt, rrt.cmds, &args);
+#endif
+	RzStrBuf req;
+	rz_strbuf_init(&req);
+	bool req_ok = append_batch_item_args(&req, &args);
+	rz_pvector_clear(&args);
+#if __WINDOWS__
+	free(wcmds);
+#endif
+	rz_list_free(extra_args);
+	rz_list_free(files);
+	if (!req_ok) {
+		rz_strbuf_fini(&req);
+		return NULL;
+	}
+
+	if (*worker_slot && (*worker_slot)->requests >= WORKER_MAX_REQUESTS) {
+		rz_test_rizin_worker_free(*worker_slot);
+		*worker_slot = NULL;
+	}
+	if (!*worker_slot) {
+		*worker_slot = rz_test_rizin_worker_new(config);
+		if (!*worker_slot) {
+			rz_strbuf_fini(&req);
+			return NULL;
+		}
+	}
+
+	RzTestRizinWorker *worker = *worker_slot;
+	bool sent = worker_write_all(worker->proc, (const ut8 *)rz_strbuf_get(&req), rz_strbuf_length(&req));
+	rz_strbuf_fini(&req);
+	if (!sent) {
+		rz_test_rizin_worker_kill(worker_slot);
+		return NULL;
+	}
+
+	ut64 deadline_us = config->timeout_ms == UT64_MAX
+		? UT64_MAX
+		: rz_time_now_mono() + config->timeout_ms * 1000;
+	bool timedout = false;
+	char hdr[128];
+	int item_rc = 0;
+	size_t out_len = 0;
+	size_t err_len = 0;
+	if (!worker_read_line(worker, hdr, sizeof(hdr), deadline_us, &timedout) ||
+		!parse_worker_result_header(hdr, &item_rc, &out_len, &err_len)) {
+		if (timedout_out) {
+			*timedout_out = timedout;
+		}
+		rz_test_rizin_worker_kill(worker_slot);
+		return NULL;
+	}
+
+	ut8 *out_buf = malloc(out_len + 1);
+	ut8 *err_buf = malloc(err_len + 1);
+	if (!out_buf || !err_buf ||
+		!worker_read_exact(worker, out_buf, out_len, deadline_us, &timedout) ||
+		!worker_read_exact(worker, err_buf, err_len, deadline_us, &timedout)) {
+		free(out_buf);
+		free(err_buf);
+		if (timedout_out) {
+			*timedout_out = timedout;
+		}
+		rz_test_rizin_worker_kill(worker_slot);
+		return NULL;
+	}
+	out_buf[out_len] = '\0';
+	err_buf[err_len] = '\0';
+	out_len = crlf2lf_len(out_buf, out_len);
+	err_len = crlf2lf_len(err_buf, err_len);
+
+	RzSubprocessOutput *out = RZ_NEW0(RzSubprocessOutput);
+	if (!out) {
+		free(out_buf);
+		free(err_buf);
+		return NULL;
+	}
+	out->out = out_buf;
+	out->out_len = (int)out_len;
+	out->err = err_buf;
+	out->err_len = (int)err_len;
+	out->ret = item_rc;
+	out->timeout = false;
+	worker->requests++;
+	*proto_ok = true;
+	return out;
+}
+
+/**
+ * \brief Run a single test using a persistent rizin worker when eligible, with fallback.
+ */
+RZ_API RZ_OWN RzTestResultInfo *rz_test_run_test_with_worker(RZ_NONNULL RzTestRunConfig *config, RZ_NONNULL RzTest *test, RZ_NULLABLE RzTestRizinWorker **worker_slot) {
+	rz_return_val_if_fail(config && test, NULL);
+	bool eligible = worker_slot && !test_path_is_archos(test->path) &&
+		((test->type == RZ_TEST_TYPE_CMD && rz_test_cmd_test_batchable(test->cmd_test)) ||
+			(test->type == RZ_TEST_TYPE_JSON && !test->json_test->load_plugins &&
+				!cmds_contain_process_mutating_op(test->json_test->cmd)));
+	if (!eligible) {
+		return rz_test_run_test(config, test);
+	}
+
+	ut64 start_time = rz_time_now_mono();
+	bool proto_ok = false;
+	bool timedout = false;
+	RzSubprocessOutput *out = run_test_in_worker(config, test, worker_slot, &proto_ok, &timedout);
+	if (timedout) {
+		rz_subprocess_output_free(out);
+		RzTestResultInfo *ret = RZ_NEW0(RzTestResultInfo);
+		if (!ret) {
+			return NULL;
+		}
+		RzSubprocessOutput *timeout_out = RZ_NEW0(RzSubprocessOutput);
+		if (timeout_out) {
+			timeout_out->out = (ut8 *)rz_str_dup("");
+			timeout_out->err = (ut8 *)rz_str_dup("");
+			timeout_out->ret = -1;
+			timeout_out->timeout = true;
+			if (!timeout_out->out || !timeout_out->err) {
+				rz_subprocess_output_free(timeout_out);
+				timeout_out = NULL;
+			}
+		}
+		ret->test = test;
+		ret->proc_out = timeout_out;
+		ret->timeout = true;
+		ret->run_failed = !timeout_out;
+		ret->time_elapsed = rz_time_now_mono() - start_time;
+		bool broken = test->type == RZ_TEST_TYPE_CMD
+			? test->cmd_test->broken.value
+			: (test->type == RZ_TEST_TYPE_JSON ? test->json_test->broken : false);
+		ret->result = broken ? RZ_TEST_RESULT_BROKEN : RZ_TEST_RESULT_FAILED;
+		return ret;
+	}
+	if (!proto_ok || !out) {
+		rz_subprocess_output_free(out);
+		return rz_test_run_test(config, test);
+	}
+
+	RzTestResultInfo *ret = RZ_NEW0(RzTestResultInfo);
+	if (!ret) {
+		rz_subprocess_output_free(out);
+		return NULL;
+	}
+	ret->test = test;
+	ret->proc_out = out;
+	ret->timeout = false;
+	ret->run_failed = false;
+	ret->time_elapsed = rz_time_now_mono() - start_time;
+
+	bool success = false;
+	bool broken = false;
+	if (test->type == RZ_TEST_TYPE_CMD) {
+		success = rz_test_check_cmd_test(out, test->cmd_test);
+		broken = test->cmd_test->broken.value;
+	} else if (test->type == RZ_TEST_TYPE_JSON) {
+		success = rz_test_check_json_test(out, test->json_test);
+		broken = test->json_test->broken;
+	}
+	if (!success) {
+		ret->result = broken ? RZ_TEST_RESULT_BROKEN : RZ_TEST_RESULT_FAILED;
+	} else {
+		ret->result = broken ? RZ_TEST_RESULT_FIXED : RZ_TEST_RESULT_OK;
+	}
+	return ret;
 }
 
 #define JQ_CMD "jq"

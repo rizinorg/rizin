@@ -219,7 +219,13 @@ RZ_API bool rz_test_test_database_load_fuzz(RzTestDatabase *db, const char *path
 typedef RzSubprocessOutput *(*RzTestCmdRunner)(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user);
 
+typedef struct rz_test_rizin_worker_t RzTestRizinWorker;
+
 RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user);
+RZ_API bool rz_test_cmd_test_batchable(RZ_NONNULL const RzCmdTest *test);
+RZ_API RZ_OWN RzTestRizinWorker *rz_test_rizin_worker_new(RZ_NONNULL RzTestRunConfig *config);
+RZ_API void rz_test_rizin_worker_free(RZ_NULLABLE RzTestRizinWorker *worker);
+RZ_API RZ_OWN RzTestResultInfo *rz_test_run_test_with_worker(RZ_NONNULL RzTestRunConfig *config, RZ_NONNULL RzTest *test, RZ_NULLABLE RzTestRizinWorker **worker_slot);
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test);
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp);
 RZ_API bool rz_test_check_jq_available(void);
