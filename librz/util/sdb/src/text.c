@@ -3,6 +3,7 @@
 
 #include "sdb.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <sys/stat.h>
@@ -78,10 +79,28 @@ static void text_buf_raw_write(SdbTextBuf *tb, const char *data, size_t sz) {
 	if (!tb->ok) {
 		return;
 	}
-	ssize_t written = write(tb->fd, data, sz);
-	if (written < 0 || (size_t)written != sz) {
-		SDB_V_NOT(-1, -1);
-		tb->ok = false;
+	while (sz > 0) {
+#if __WINDOWS__
+		unsigned int chunk = sz > (size_t)INT_MAX ? (unsigned int)INT_MAX : (unsigned int)sz;
+		ssize_t written = write(tb->fd, data, chunk);
+#else
+		ssize_t written = write(tb->fd, data, sz);
+#endif
+		if (written < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			eprintf("write at %s:%d failed: %s\n", __FILE__, __LINE__, strerror(errno));
+			tb->ok = false;
+			return;
+		}
+		if (written == 0) {
+			eprintf("write at %s:%d failed: short write\n", __FILE__, __LINE__);
+			tb->ok = false;
+			return;
+		}
+		data += (size_t)written;
+		sz -= (size_t)written;
 	}
 }
 
@@ -103,6 +122,9 @@ static void text_buf_write(SdbTextBuf *tb, const char *data, size_t sz) {
 	}
 	if (tb->len + sz > sizeof(tb->buf)) {
 		text_buf_flush(tb);
+		if (!tb->ok) {
+			return;
+		}
 	}
 	memcpy(tb->buf + tb->len, data, sz);
 	tb->len += sz;
@@ -225,14 +247,13 @@ static bool text_save(Sdb *s, SdbTextBuf *tb, bool sort, RzList /*<char *>*/ *pa
 
 	return true;
 }
-#undef write_
 
 /**
  * \brief Save an Sdb database in plaintext format to a file descriptor using buffered writes.
  * \param s Sdb instance to serialize
  * \param fd Destination file descriptor
  * \param sort Whether to sort keys and sub-namespaces lexicographically
- * \return true on success, false on allocation failure
+ * \return true on success, false on allocation or write failure
  */
 RZ_API bool sdb_text_save_fd(Sdb *s, int fd, bool sort) {
 	if (!s || fd < 0) {
