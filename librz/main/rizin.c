@@ -200,6 +200,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			" DEBUGINFOD_URLS     e bin.dbginfo.debuginfod_urls - use alternative debuginfod server\n"
 			" COLUMNS             terminal columns to use\n"
 			" RZ_ABORTLEVEL       target log level/severity when to abort (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)\n"
+			" RZ_COLOR            enables/disables colors support (0: none, 1: ansi, 2: 256, 3: truecolor)\n"
 			" RZ_CURL             whether to use curl (for SSL support)\n"
 			" RZ_DEBUG            if defined, show error messages and crash signal\n"
 			" RZ_DEBUG_ASSERT     set a breakpoint when hitting an assert\n"
@@ -412,6 +413,15 @@ static bool mustSaveHistory(RzCore *r) {
 
 // Try to set the correct scr.color for the current terminal.
 static void set_color_default(RzCore *r) {
+	// Honor native RZ_COLOR before terminal auto-detection, while still
+	// allowing later CLI -e scr.color=..., -0, and rizinrc overrides.
+	char *rz_color = rz_sys_getenv("RZ_COLOR");
+	if (rz_is_valid_input_num_value(NULL, rz_color)) {
+		rz_config_set_i(r->config, "scr.color", rz_num_math_ut64(NULL, rz_color));
+		free(rz_color);
+		return;
+	}
+	free(rz_color);
 #ifdef __WINDOWS__
 	char *alacritty = rz_sys_getenv("ALACRITTY_LOG");
 	if (alacritty) {
