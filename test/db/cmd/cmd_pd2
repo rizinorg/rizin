@@ -983,3 +983,21 @@ EXPECT=<<EOF
             0x00001024      jmp   qword [reloc._Exit]                  ; [0x3ff8:8]=0x4008 reloc.target._Exit
 EOF
 RUN
+
+NAME=asm.var.summary skips empty variable list
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.lines=false
+e asm.bytes=false
+e asm.var.summary=2
+wx c3
+af fcn.empty
+pdf
+EOF
+EXPECT=<<EOF
+fcn.empty();
+0x00000000      ret
+EOF
+RUN
