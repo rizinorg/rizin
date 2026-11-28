@@ -1901,6 +1901,9 @@ static void ds_show_function_var(RzDisasmState *ds, RzAnalysisFunction *fcn, RzA
 }
 
 static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *list) {
+	if (rz_list_empty(list)) {
+		return;
+	}
 	const char *numColor = ds->core->cons->context->pal.num;
 	RzAnalysisVar *var;
 	RzListIter *iter;
