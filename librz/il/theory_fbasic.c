@@ -429,6 +429,17 @@ static RzFloat *float_terop_full_precision(RzFloat *x, RzFloat *y, RzFloat *z, R
 	return ret;
 }
 
+static RzFloat *float_hybrid_full_precision(RzFloat *x, RzBitVector *n, RzFloatRMode mode,
+	RzFloat *(*operation)(RzFloat *, RzBitVector *, RzFloatRMode)) {
+	RzFloatRPrecision saved;
+	if (!float_full_precision_begin(x && x->r == RZ_FLOAT_IEEE754_BIN_80, &saved)) {
+		return NULL;
+	}
+	RzFloat *ret = operation(x, n, mode);
+	float_full_precision_end(saved);
+	return ret;
+}
+
 void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
@@ -514,12 +525,6 @@ void *rz_il_handler_fexcept(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return ret;
 }
 
-void *rz_il_handler_frsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : float todo unimplemented
-	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
-}
-
 static void float_merge_operand_exceptions(RzFloat *ret, const RzFloat *x, const RzFloat *y, const RzFloat *z) {
 	if (!ret) {
 		return;
@@ -533,6 +538,24 @@ static void float_merge_operand_exceptions(RzFloat *ret, const RzFloat *x, const
 	if (z) {
 		ret->exception |= z->exception;
 	}
+}
+
+static void *handle_float_unop(RzILVM *vm, RzILOpPure *op, RzILTypePure *type,
+	const RzILOpArgsFloatAlgUnop *args,
+	RzFloat *(*operation)(RzFloat *, RzFloatRMode)) {
+	RzFloatRMode mode;
+	if (!resolve_rmode(vm, op->code, &args->rmode, &mode)) {
+		return NULL;
+	}
+	RzFloat *x = rz_il_evaluate_float(vm, args->f);
+	if (!x) {
+		return NULL;
+	}
+	RzFloat *ret = float_unop_full_precision(x, mode, operation);
+	float_merge_operand_exceptions(ret, x, NULL, NULL);
+	rz_float_free(x);
+	*type = RZ_IL_TYPE_PURE_FLOAT;
+	return ret;
 }
 
 static void *handle_float_binop(RzILVM *vm, RzILOpPure *op, RzILTypePure *type,
@@ -557,6 +580,37 @@ static void *handle_float_binop(RzILVM *vm, RzILOpPure *op, RzILTypePure *type,
 	rz_float_free(y);
 	*type = RZ_IL_TYPE_PURE_FLOAT;
 	return ret;
+}
+
+/* The integer operand of rootn, pown and compound is a signed two's
+ * complement integer of any width, it carries no exception flags. */
+static void *handle_float_hybrid_binop(RzILVM *vm, RzILOpPure *op, RzILTypePure *type,
+	const RzILOpArgsFloatAlgHybridBinop *args,
+	RzFloat *(*operation)(RzFloat *, RzBitVector *, RzFloatRMode)) {
+	RzFloatRMode mode;
+	if (!resolve_rmode(vm, op->code, &args->rmode, &mode)) {
+		return NULL;
+	}
+	RzFloat *x = rz_il_evaluate_float(vm, args->f);
+	if (!x) {
+		return NULL;
+	}
+	RzBitVector *n = rz_il_evaluate_bitv(vm, args->n);
+	if (!n) {
+		rz_float_free(x);
+		return NULL;
+	}
+	RzFloat *ret = float_hybrid_full_precision(x, n, mode, operation);
+	float_merge_operand_exceptions(ret, x, NULL, NULL);
+	rz_float_free(x);
+	rz_bv_free(n);
+	*type = RZ_IL_TYPE_PURE_FLOAT;
+	return ret;
+}
+
+void *rz_il_handler_frsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.frsqrt, rz_float_rsqrt);
 }
 
 void *rz_il_handler_fadd(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
@@ -585,15 +639,13 @@ void *rz_il_handler_fmod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 }
 
 void *rz_il_handler_fhypot(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : float todo unimplemented
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+	return handle_float_binop(vm, op, type, &op->op.fhypot, rz_float_hypot);
 }
 
 void *rz_il_handler_fpow(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : float todo unimplemented
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+	return handle_float_binop(vm, op, type, &op->op.fpow, rz_float_pow);
 }
 
 void *rz_il_handler_fmad(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
@@ -630,19 +682,183 @@ void *rz_il_handler_fmad(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 }
 
 void *rz_il_handler_frootn(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : float todo unimplemented
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+	return handle_float_hybrid_binop(vm, op, type, &op->op.frootn, rz_float_rootn);
 }
 
 void *rz_il_handler_fpown(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : float todo unimplemented
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+	return handle_float_hybrid_binop(vm, op, type, &op->op.fpown, rz_float_pown);
 }
 
 void *rz_il_handler_fcompound(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : float todo unimplemented
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+	return handle_float_hybrid_binop(vm, op, type, &op->op.fcompound, rz_float_compound);
+}
+
+void *rz_il_handler_fexp(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fexp, rz_float_exp);
+}
+
+void *rz_il_handler_fexpm1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fexpm1, rz_float_expm1);
+}
+
+void *rz_il_handler_fexp2(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fexp2, rz_float_exp2);
+}
+
+void *rz_il_handler_fexp2m1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fexp2m1, rz_float_exp2m1);
+}
+
+void *rz_il_handler_fexp10(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fexp10, rz_float_exp10);
+}
+
+void *rz_il_handler_fexp10m1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fexp10m1, rz_float_exp10m1);
+}
+
+void *rz_il_handler_flog(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.flog, rz_float_log);
+}
+
+void *rz_il_handler_flog2(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.flog2, rz_float_log2);
+}
+
+void *rz_il_handler_flog10(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.flog10, rz_float_log10);
+}
+
+void *rz_il_handler_flogp1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.flogp1, rz_float_logp1);
+}
+
+void *rz_il_handler_flog2p1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.flog2p1, rz_float_log2p1);
+}
+
+void *rz_il_handler_flog10p1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.flog10p1, rz_float_log10p1);
+}
+
+void *rz_il_handler_fsin(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fsin, rz_float_sin);
+}
+
+void *rz_il_handler_fcos(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fcos, rz_float_cos);
+}
+
+void *rz_il_handler_ftan(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.ftan, rz_float_tan);
+}
+
+void *rz_il_handler_fsinpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fsinpi, rz_float_sinpi);
+}
+
+void *rz_il_handler_fcospi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fcospi, rz_float_cospi);
+}
+
+void *rz_il_handler_ftanpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.ftanpi, rz_float_tanpi);
+}
+
+void *rz_il_handler_fasin(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fasin, rz_float_asin);
+}
+
+void *rz_il_handler_facos(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.facos, rz_float_acos);
+}
+
+void *rz_il_handler_fatan(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fatan, rz_float_atan);
+}
+
+void *rz_il_handler_fasinpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fasinpi, rz_float_asinpi);
+}
+
+void *rz_il_handler_facospi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.facospi, rz_float_acospi);
+}
+
+void *rz_il_handler_fatanpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fatanpi, rz_float_atanpi);
+}
+
+void *rz_il_handler_fsinh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fsinh, rz_float_sinh);
+}
+
+void *rz_il_handler_fcosh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fcosh, rz_float_cosh);
+}
+
+void *rz_il_handler_ftanh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.ftanh, rz_float_tanh);
+}
+
+void *rz_il_handler_fasinh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fasinh, rz_float_asinh);
+}
+
+void *rz_il_handler_facosh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.facosh, rz_float_acosh);
+}
+
+void *rz_il_handler_fatanh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_unop(vm, op, type, &op->op.fatanh, rz_float_atanh);
+}
+
+void *rz_il_handler_fatan2(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	// the first operand is the ordinate, as for rz_float_atan2(y, x)
+	return handle_float_binop(vm, op, type, &op->op.binop_float_alg, rz_float_atan2);
+}
+
+void *rz_il_handler_fatan2pi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	// the first operand is the ordinate, as for rz_float_atan2pi(y, x)
+	return handle_float_binop(vm, op, type, &op->op.binop_float_alg, rz_float_atan2pi);
+}
+
+void *rz_il_handler_fpowr(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	return handle_float_binop(vm, op, type, &op->op.fpowr, rz_float_powr);
 }

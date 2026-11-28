@@ -94,9 +94,41 @@ void *rz_il_handler_fmad(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_frootn(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fpown(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcompound(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fexp(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fexpm1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fexp2(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fexp2m1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fexp10(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fexp10m1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_flog(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_flog2(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_flog10(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_flogp1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_flog2p1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_flog10p1(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fsin(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcos(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_ftan(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fsinpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcospi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_ftanpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fasin(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_facos(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fatan(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fasinpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_facospi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fatanpi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fsinh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcosh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_ftanh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fasinh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_facosh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fatanh(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fatan2(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fatan2pi(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fpowr(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 
 // TODO: remove me when all the handlers are implemented
-void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 bool rz_il_handler_effect_unimplemented(RzILVM *vm, RzILOpEffect *op);
 
 RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] = {
@@ -152,7 +184,7 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_FORDER] = rz_il_handler_forder,
 	[RZ_IL_OP_FROUND] = rz_il_handler_fround,
 	[RZ_IL_OP_FSQRT] = rz_il_handler_fsqrt,
-	[RZ_IL_OP_FRSQRT] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_FRSQRT] = rz_il_handler_frsqrt,
 	[RZ_IL_OP_FEXCEPT] = rz_il_handler_fexcept,
 	[RZ_IL_OP_FADD] = rz_il_handler_fadd,
 	[RZ_IL_OP_FSUB] = rz_il_handler_fsub,
@@ -168,12 +200,44 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_FCONVERT] = rz_il_handler_fconvert,
 
 	// Float Theory
-	// TODO : Implement other Float Theory operations
-	[RZ_IL_OP_FHYPOT] = rz_il_handler_pure_unimplemented,
-	[RZ_IL_OP_FPOW] = rz_il_handler_pure_unimplemented,
-	[RZ_IL_OP_FROOTN] = rz_il_handler_pure_unimplemented,
-	[RZ_IL_OP_FPOWN] = rz_il_handler_pure_unimplemented,
-	[RZ_IL_OP_FCOMPOUND] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_FHYPOT] = rz_il_handler_fhypot,
+	[RZ_IL_OP_FPOW] = rz_il_handler_fpow,
+	[RZ_IL_OP_FROOTN] = rz_il_handler_frootn,
+	[RZ_IL_OP_FPOWN] = rz_il_handler_fpown,
+	[RZ_IL_OP_FCOMPOUND] = rz_il_handler_fcompound,
+	[RZ_IL_OP_FEXP] = rz_il_handler_fexp,
+	[RZ_IL_OP_FEXPM1] = rz_il_handler_fexpm1,
+	[RZ_IL_OP_FEXP2] = rz_il_handler_fexp2,
+	[RZ_IL_OP_FEXP2M1] = rz_il_handler_fexp2m1,
+	[RZ_IL_OP_FEXP10] = rz_il_handler_fexp10,
+	[RZ_IL_OP_FEXP10M1] = rz_il_handler_fexp10m1,
+	[RZ_IL_OP_FLOG] = rz_il_handler_flog,
+	[RZ_IL_OP_FLOG2] = rz_il_handler_flog2,
+	[RZ_IL_OP_FLOG10] = rz_il_handler_flog10,
+	[RZ_IL_OP_FLOGP1] = rz_il_handler_flogp1,
+	[RZ_IL_OP_FLOG2P1] = rz_il_handler_flog2p1,
+	[RZ_IL_OP_FLOG10P1] = rz_il_handler_flog10p1,
+	[RZ_IL_OP_FSIN] = rz_il_handler_fsin,
+	[RZ_IL_OP_FCOS] = rz_il_handler_fcos,
+	[RZ_IL_OP_FTAN] = rz_il_handler_ftan,
+	[RZ_IL_OP_FSINPI] = rz_il_handler_fsinpi,
+	[RZ_IL_OP_FCOSPI] = rz_il_handler_fcospi,
+	[RZ_IL_OP_FTANPI] = rz_il_handler_ftanpi,
+	[RZ_IL_OP_FASIN] = rz_il_handler_fasin,
+	[RZ_IL_OP_FACOS] = rz_il_handler_facos,
+	[RZ_IL_OP_FATAN] = rz_il_handler_fatan,
+	[RZ_IL_OP_FASINPI] = rz_il_handler_fasinpi,
+	[RZ_IL_OP_FACOSPI] = rz_il_handler_facospi,
+	[RZ_IL_OP_FATANPI] = rz_il_handler_fatanpi,
+	[RZ_IL_OP_FSINH] = rz_il_handler_fsinh,
+	[RZ_IL_OP_FCOSH] = rz_il_handler_fcosh,
+	[RZ_IL_OP_FTANH] = rz_il_handler_ftanh,
+	[RZ_IL_OP_FASINH] = rz_il_handler_fasinh,
+	[RZ_IL_OP_FACOSH] = rz_il_handler_facosh,
+	[RZ_IL_OP_FATANH] = rz_il_handler_fatanh,
+	[RZ_IL_OP_FATAN2] = rz_il_handler_fatan2,
+	[RZ_IL_OP_FATAN2PI] = rz_il_handler_fatan2pi,
+	[RZ_IL_OP_FPOWR] = rz_il_handler_fpowr,
 };
 
 RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT_MAX] = {

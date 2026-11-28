@@ -605,6 +605,39 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	case RZ_IL_OP_FROOTN:
 	case RZ_IL_OP_FPOWN:
 	case RZ_IL_OP_FCOMPOUND:
+	case RZ_IL_OP_FEXP:
+	case RZ_IL_OP_FEXPM1:
+	case RZ_IL_OP_FEXP2:
+	case RZ_IL_OP_FEXP2M1:
+	case RZ_IL_OP_FEXP10:
+	case RZ_IL_OP_FEXP10M1:
+	case RZ_IL_OP_FLOG:
+	case RZ_IL_OP_FLOG2:
+	case RZ_IL_OP_FLOG10:
+	case RZ_IL_OP_FLOGP1:
+	case RZ_IL_OP_FLOG2P1:
+	case RZ_IL_OP_FLOG10P1:
+	case RZ_IL_OP_FSIN:
+	case RZ_IL_OP_FCOS:
+	case RZ_IL_OP_FTAN:
+	case RZ_IL_OP_FSINPI:
+	case RZ_IL_OP_FCOSPI:
+	case RZ_IL_OP_FTANPI:
+	case RZ_IL_OP_FASIN:
+	case RZ_IL_OP_FACOS:
+	case RZ_IL_OP_FATAN:
+	case RZ_IL_OP_FASINPI:
+	case RZ_IL_OP_FACOSPI:
+	case RZ_IL_OP_FATANPI:
+	case RZ_IL_OP_FSINH:
+	case RZ_IL_OP_FCOSH:
+	case RZ_IL_OP_FTANH:
+	case RZ_IL_OP_FASINH:
+	case RZ_IL_OP_FACOSH:
+	case RZ_IL_OP_FATANH:
+	case RZ_IL_OP_FATAN2:
+	case RZ_IL_OP_FATAN2PI:
+	case RZ_IL_OP_FPOWR:
 	case RZ_IL_OP_FEXCEPT:
 		RZ_LOG_WARN("Unhandled pure %" PFMT32d "\n", pure->code);
 		// Not implemented.

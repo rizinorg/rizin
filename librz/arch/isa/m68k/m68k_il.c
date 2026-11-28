@@ -7261,6 +7261,8 @@ static RzILOpEffect *lift_fpu_compare_data(M68KILCtx *ctx, bool test_zero) {
 	return SEQ2(seq, set_fpsr_cc_from_float_cmp("dst_fp", "src80"));
 }
 
+#include "m68k_il_fpu_trans.inc"
+
 static RzILOpEffect *lift_fpu_data(M68KILCtx *ctx) {
 	switch (ctx->insn->id) {
 	case M68K_INS_FMOVECR:
@@ -7301,7 +7303,9 @@ static RzILOpEffect *lift_fpu_data(M68KILCtx *ctx) {
 	case M68K_INS_FSINH:
 	case M68K_INS_FCOSH:
 	case M68K_INS_FTANH:
-		NOT_IMPLEMENTED;
+		return lift_fpu_trans_data(ctx, ctx->insn->id);
+	case M68K_INS_FSINCOS:
+		return lift_fpu_sincos_data(ctx);
 	case M68K_INS_FGETEXP:
 	case M68K_INS_FGETMAN:
 		return lift_fpu_extract_data(ctx, ctx->insn->id);
