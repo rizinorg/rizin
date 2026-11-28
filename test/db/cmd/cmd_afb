@@ -147,3 +147,20 @@ EXPECT=<<EOF
 | ;-- case d:                                                          ; from 0x401125
 EOF
 RUN
+
+NAME=afbr in JSON
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 5589e583ec088b45088945fc8b45fc85c07402c9c331c0c9c3
+af
+afbrj
+afbr
+EOF
+EXPECT=<<EOF
+[24,20]
+0x00000018
+0x00000014
+EOF
+RUN

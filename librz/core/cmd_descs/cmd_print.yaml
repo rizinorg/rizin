@@ -517,6 +517,10 @@ commands:
       - name: pfn
         summary: List named formats/Print named format string/Define a new named format
         cname: cmd_print_format_named
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: formatname
             type: RZ_CMD_ARG_TYPE_PF_FORMAT_NAME

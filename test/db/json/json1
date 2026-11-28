@@ -1,10 +1,15 @@
 &j
 /ad/j push rbp
+/ad/aj push rbp
+/aflj
+/aslj
+/atlj
 /adj push rbp
 /j l
 /Oj
 /oj
 /Rj
+/rj sym.main
 /wj
 %j 0x10
 verj
@@ -17,19 +22,29 @@ aeaj
 arj
 afbij
 afbj
+afbrj @ sym.main
 afcrj
+afdj @ sym.main
 afij
+afiij @ sym.main
 afisaj
 aflj
+afl.j @ sym.main
 aflmj
 afnsj @ sym.main
+afv=j @ sym.main
+afvfj @ sym.main
 afvlj @ sym.main
+afvRj @ sym.main
 afvrj @ sym.main
 afvsj @ sym.main
+afvxj @ sym.main
+afvWj @ sym.main
 agc j @ sym.main
 agg j
 ag J
 ag j
+ahtsj 4
 aij
 aiij
 anj

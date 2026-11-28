@@ -10,6 +10,7 @@ pDj
 pdj
 pifj; piuj 4
 pifcj
+pfnj int
 Pj
 psbj
 psij
@@ -26,9 +27,13 @@ pxwj
 rj
 shj
 tej
+tefj 1
 tfj
 Tj
 tj
+tpj int
+tpvj int 0x10
+tpxj int 01020304
 tsj
 ttj
 tuj

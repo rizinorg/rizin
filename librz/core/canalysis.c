@@ -333,9 +333,10 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 	rz_list_free(flist);
 }
 
-RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) {
+RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
 	RzAnalysisBlock *b;
 	void **iter;
+	rz_cmd_state_output_array_start(state);
 	rz_pvector_foreach (fcn->bbs, iter) {
 		b = (RzAnalysisBlock *)*iter;
 		if (b->jump == UT64_MAX) {
@@ -344,9 +345,14 @@ RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) 
 				break;
 			}
 
-			rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", retaddr);
+			if (state->mode == RZ_OUTPUT_MODE_JSON) {
+				pj_n(state->d.pj, retaddr);
+			} else {
+				rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", retaddr);
+			}
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 }
 
 static int casecmp(const void *_a, const void *_b, void *user) {

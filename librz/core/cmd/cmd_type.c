@@ -77,20 +77,36 @@ static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, c
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_value) {
+static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_value, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzList *matches = rz_type_db_find_enums_by_val(typedb, value);
 	if (!matches || rz_list_empty(matches)) {
 		RZ_LOG_ERROR("Cannot find matching enum member\n");
+		rz_list_free(matches);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzListIter *iter;
 	char *match;
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (matches, iter, match) {
-		rz_cons_println(core->cons, match);
+		if (state->mode != RZ_OUTPUT_MODE_JSON) {
+			rz_cons_println(core->cons, match);
+			continue;
+		}
+		// matches are "enum.member", and a member name has no dot
+		char *dot = strrchr(match, '.');
+		if (!dot) {
+			continue;
+		}
+		*dot = '\0';
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "enum", match);
+		pj_ks(state->d.pj, "member", dot + 1);
+		pj_end(state->d.pj);
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(matches);
 	return RZ_CMD_STATUS_OK;
 }
@@ -111,7 +127,22 @@ static void type_list_c_all_nl(RzCore *core) {
 	}
 }
 
-static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
+/**
+ * \brief Prints the pf output of \p fmt at \p address, as JSON in JSON mode
+ */
+static void type_format_print_at(RzCore *core, const char *fmt, ut64 address, RzOutputMode mode) {
+	bool json = mode == RZ_OUTPUT_MODE_JSON;
+	char *r = rz_core_print_format(core, fmt, json ? RZ_PRINT_JSON : RZ_PRINT_MUSTSEE, address);
+	// the JSON of pf has no newline at the end
+	if (json) {
+		rz_cons_println(core->cons, rz_str_get(r));
+	} else {
+		rz_cons_print(core->cons, r);
+	}
+	free(r);
+}
+
+static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address, RzOutputMode mode) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
@@ -119,14 +150,12 @@ static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 addres
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, address);
-	rz_cons_print(core->cons, r);
-	free(r);
+	type_format_print_at(core, fmt, address, mode);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, const char *varname) {
+static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, const char *varname, RzOutputMode mode) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
@@ -147,14 +176,12 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 addr = rz_core_analysis_var_addr(core, var);
-	char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, addr);
-	rz_cons_print(core->cons, r);
-	free(r);
+	type_format_print_at(core, fmt, addr, mode);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 val) {
+static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 val, RzOutputMode mode) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
@@ -163,12 +190,12 @@ static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	// TODO: Convert to the API
-	rz_core_cmdf(core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
+	rz_core_cmdf(core, "pf%s %s @v:0x%08" PFMT64x "\n", mode == RZ_OUTPUT_MODE_JSON ? "j" : "", fmt, val);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, const char *hexpairs) {
+static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, const char *hexpairs, RzOutputMode mode) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	char *fmt = rz_type_format(typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
@@ -177,7 +204,7 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	// TODO: Convert to the API
-	rz_core_cmdf(core, "pf %s @x:%s", fmt, hexpairs);
+	rz_core_cmdf(core, "pf%s %s @x:%s", mode == RZ_OUTPUT_MODE_JSON ? "j" : "", fmt, hexpairs);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
@@ -625,9 +652,9 @@ RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *enum_value = argc > 1 ? argv[1] : NULL;
-	return types_enum_member_find_all(core, enum_value);
+	return types_enum_member_find_all(core, enum_value, state);
 }
 
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -736,28 +763,28 @@ RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_type_print_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_type_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *addr_or_var = argc > 2 ? argv[2] : NULL;
 	if (!addr_or_var) {
-		return type_format_print(core, argv[1], core->offset);
+		return type_format_print(core, argv[1], core->offset, mode);
 	}
 	ut64 addr = rz_num_math(core->num, addr_or_var);
 	if (!addr) {
-		return type_format_print_variable(core, argv[1], addr_or_var);
+		return type_format_print_variable(core, argv[1], addr_or_var, mode);
 	}
-	return type_format_print(core, argv[1], addr);
+	return type_format_print(core, argv[1], addr, mode);
 }
 
-RZ_IPI RzCmdStatus rz_type_print_value_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_type_print_value_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *value = argc > 2 ? argv[2] : NULL;
 	if (!value) {
-		return type_format_print_value(core, argv[1], core->offset);
+		return type_format_print_value(core, argv[1], core->offset, mode);
 	}
-	return type_format_print_value(core, argv[1], rz_num_math(core->num, value));
+	return type_format_print_value(core, argv[1], rz_num_math(core->num, value), mode);
 }
 
-RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const char **argv) {
-	return type_format_print_hexstring(core, argv[1], argv[2]);
+RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return type_format_print_hexstring(core, argv[1], argv[2], mode);
 }
 
 RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {

@@ -6666,17 +6666,31 @@ static int compare_type_formats(const RzTypeFormat *a, const RzTypeFormat *b, RZ
 	return strcmp(a->name, b->name);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv) {
+static void print_format_named_json(PJ *pj, const char *name, const char *body) {
+	pj_o(pj);
+	pj_ks(pj, "name", name);
+	pj_ks(pj, "format", body);
+	pj_end(pj);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	bool json = state->mode == RZ_OUTPUT_MODE_JSON;
 	if (argc < 2) {
 		// List all named formats
 		RzListIter *iter;
 		RzTypeFormat *fmt = NULL;
 		RzList *formats = rz_type_db_format_all(typedb);
 		rz_list_sort(formats, (RzListComparator)compare_type_formats, NULL);
+		rz_cmd_state_output_array_start(state);
 		rz_list_foreach (formats, iter, fmt) {
-			rz_cons_printf(core->cons, "%s \"%s\"\n", fmt->name, fmt->body);
+			if (json) {
+				print_format_named_json(state->d.pj, fmt->name, fmt->body);
+			} else {
+				rz_cons_printf(core->cons, "%s \"%s\"\n", fmt->name, fmt->body);
+			}
 		}
+		rz_cmd_state_output_array_end(state);
 		rz_list_free(formats);
 		return RZ_CMD_STATUS_OK;
 	} else if (argc < 3) {
@@ -6686,10 +6700,18 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, con
 			RZ_LOG_ERROR("Format with \"%s\" name not found\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_printf(core->cons, "%s\n", fmt);
+		if (json) {
+			print_format_named_json(state->d.pj, argv[1], fmt);
+		} else {
+			rz_cons_printf(core->cons, "%s\n", fmt);
+		}
 		return RZ_CMD_STATUS_OK;
 	}
 	rz_type_db_format_set(typedb, argv[1], argv[2]);
+	// a definition in JSON mode prints the new format, not an empty line
+	if (json) {
+		print_format_named_json(state->d.pj, argv[1], argv[2]);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

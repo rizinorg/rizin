@@ -722,10 +722,25 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 			char *buf_fcn = comment
 				? rz_str_newf("%s; %s", fcn ? fcn->name : "(nofunc)", comment)
 				: rz_str_newf("%s", fcn ? fcn->name : "(nofunc)");
-			free(print_comment);
 			if (from <= xref->from && to >= xref->from) {
-				rz_cons_printf(core->cons, "%s 0x%" PFMT64x " [%s] %s\n",
-					buf_fcn, xref->from, rz_analysis_xrefs_type_tostring(xref->type), str);
+				if (param->outmode == RZ_OUTPUT_MODE_JSON) {
+					pj_o(param->pj);
+					pj_kn(param->pj, "from", xref->from);
+					pj_kn(param->pj, "to", xref->to);
+					pj_ks(param->pj, "type", rz_analysis_xrefs_type_tostring(xref->type));
+					if (fcn) {
+						pj_ks(param->pj, "fcn_name", fcn->name);
+						pj_kn(param->pj, "fcn_addr", fcn->addr);
+					}
+					pj_ks(param->pj, "disasm", str);
+					if (comment) {
+						pj_ks(param->pj, "comment", comment);
+					}
+					pj_end(param->pj);
+				} else {
+					rz_cons_printf(core->cons, "%s 0x%" PFMT64x " [%s] %s\n",
+						buf_fcn, xref->from, rz_analysis_xrefs_type_tostring(xref->type), str);
+				}
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
 					rz_core_seek(core, xref->from, true);
@@ -733,6 +748,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 					rz_core_seek(core, here, true);
 				}
 			}
+			free(print_comment);
 			free(buf_fcn);
 		}
 	}
@@ -1460,11 +1476,15 @@ reread:
 				rz_core_analysis_search(core, map->itv.addr, rz_itv_end(map->itv), n, 'w');
 			}
 		} break;
+		case 'j': // "/rj"
 		case ' ': // "/r $$"
 		case 0: // "/r"
 		{
 			RzListIter *iter;
 			RzIOMap *map;
+			if (param.outmode == RZ_OUTPUT_MODE_JSON) {
+				pj_a(param.pj);
+			}
 			rz_list_foreach (param.boundaries, iter, map) {
 				ut64 from = map->itv.addr;
 				ut64 to = rz_itv_end(map->itv);
@@ -1479,6 +1499,9 @@ reread:
 				if (rz_interrupt_is_breaked(core->intr)) {
 					break;
 				}
+			}
+			if (param.outmode == RZ_OUTPUT_MODE_JSON) {
+				pj_end(param.pj);
 			}
 		} break;
 		}
@@ -1878,13 +1901,13 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_handler(RzCore *core, int argc, cons
 }
 
 // "/ad/"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slash_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slash_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return pass_to_legacy_api(core, argc, argv, mode);
 }
 
 // "/ad/a"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slasha_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slasha_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return pass_to_legacy_api(core, argc, argv, mode);
 }
 
 // "/ae"
@@ -1898,8 +1921,31 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_f_handler(RzCore *core, int argc, cons
 }
 
 // "/afl"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_fl_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+/**
+ * \brief Lists the names of the op families or types, as the legacy "/afl" and "/atl" did
+ */
+static void search_list_op_names(RzCore *core, RzCmdStateOutput *state, bool family) {
+	rz_cmd_state_output_array_start(state);
+	for (int i = 0; i < 64; i++) {
+		const char *str = family ? rz_analysis_op_family_to_string(i) : rz_analysis_optype_to_string(i);
+		if (RZ_STR_ISEMPTY(str)) {
+			break;
+		}
+		if (!strcmp(str, "undefined")) {
+			continue;
+		}
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_s(state->d.pj, str);
+		} else {
+			rz_cons_println(core->cons, str);
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_fl_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	search_list_op_names(core, state, true);
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/ai"
@@ -1928,8 +1974,9 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_s_handler(RzCore *core, int argc, cons
 }
 
 // "/asl"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	// the legacy "/asl" ran asl
+	return rz_analysis_syscall_print_handler(core, 1, argv, state);
 }
 
 // "/at"
@@ -1938,8 +1985,9 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_t_handler(RzCore *core, int argc, cons
 }
 
 // "/atl"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	search_list_op_names(core, state, false);
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/cm"
@@ -2225,8 +2273,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_blocks_handler(RzCore *core, int argc, const ch
 }
 
 // "/r"
-RZ_IPI RzCmdStatus rz_cmd_search_reference_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_reference_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return pass_to_legacy_api(core, argc, argv, mode);
 }
 
 // "/ra"
