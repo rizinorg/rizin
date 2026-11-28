@@ -64,6 +64,12 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	op->size = ilen;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 
+	if (ilen < 1 || ilen > len) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		op->size = 0;
+		return 0;
+	}
+
 	switch (data[0]) {
 	case 0x00:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
@@ -145,6 +151,11 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		op->stackptr = -2;
 		break;
 	case 0xed:
+		if (len < 4 && (data[1] == 0x63 || data[1] == 0x6b)) {
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+			op->size = 0;
+			return 0;
+		}
 		switch (data[1]) {
 		case 0x43:
 		case 0x53:

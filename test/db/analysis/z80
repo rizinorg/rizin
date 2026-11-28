@@ -38,3 +38,82 @@ ime = 0x0
                  return
 EOF
 RUN
+NAME=z80: function ending in a truncated jr
+FILE=bins/fuzzed/pocs/tests_65081
+CMDS=aa; pdfj~?
+EXPECT=<<EOF
+1
+EOF
+RUN
+NAME=z80: truncated instructions are invalid
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=z80
+wx cd34; b 2; ao~type,size,jump,fail,ptr
+wx cd; b 1; ao~type,size,jump,fail,ptr
+wx c300; b 2; ao~type,size,jump,fail,ptr
+wx 2234; b 2; ao~type,size,jump,fail,ptr
+wx 10; b 1; ao~type,size,jump,fail,ptr
+wx 18; b 1; ao~type,size,jump,fail,ptr
+wx cb; b 1; ao~type,size,jump,fail,ptr
+wx ed; b 1; ao~type,size,jump,fail,ptr
+wx dd; b 1; ao~type,size,jump,fail,ptr
+wx fd; b 1; ao~type,size,jump,fail,ptr
+wx ed63; b 2; ao~type,size,jump,fail,ptr
+wx ed6b34; b 3; ao~type,size,jump,fail,ptr
+EOF
+EXPECT=<<EOF
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+refptr: 0
+size: 0
+type: ill
+EOF
+RUN
+NAME=z80: function ending in a lone prefix byte
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=z80
+af+ fcn.lone @ 0
+afb+ 0 0 1
+wx ed; pdfj
+wx dd; pdfj
+wx fd; pdfj
+EOF
+EXPECT=<<EOF
+{"name":"fcn.lone","size":1,"addr":0,"ops":[{"offset":0,"size":1,"bytes":"ed","opcode":"invalid"}]}
+{"name":"fcn.lone","size":1,"addr":0,"ops":[{"offset":0,"size":1,"bytes":"dd","opcode":"invalid"}]}
+{"name":"fcn.lone","size":1,"addr":0,"ops":[{"offset":0,"size":1,"bytes":"fd","opcode":"invalid"}]}
+EOF
+RUN
