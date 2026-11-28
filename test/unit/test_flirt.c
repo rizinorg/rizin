@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <math.h>
+#include <rz_core.h>
 #include <rz_flirt.h>
 #include <rz_util.h>
 #include "minunit.h"
@@ -49,6 +50,134 @@ test_flirt_pat_def(parse_multiline, 5,
 	"31C04885D2741F488D4417FF4839C77610EB1D0F1F4400004883E8014839C777 13 9867 0033 :0000 Curl_memrchr \n"
 	"---\n");
 
+bool test_flirt_pat_unsorted_local_offsets_sig_roundtrip(void) {
+	const char *pat =
+		"554889E5909090909090909090909090909090909090909090909090909090C3 00 0000 0050 "
+		":0000@ first_loc :0030@ late_loc :0020 pub_mid :0020 pub_mid_alias :0040 pub_end\n"
+		"---\n";
+	RzBuffer *pat_buf = rz_buf_new_with_string(pat);
+	mu_assert_notnull(pat_buf, "pat_buf");
+	RzFlirtNode *node = rz_sign_flirt_parse_string_pattern_from_buffer(pat_buf, RZ_FLIRT_NODE_OPTIMIZE_NONE, NULL);
+	mu_assert_notnull(node, "parsed pat node");
+
+	RzFlirtNode *child = rz_list_first_val(node->child_list);
+	mu_assert_notnull(child, "child node");
+	RzFlirtModule *mod = rz_list_first_val(child->module_list);
+	mu_assert_notnull(mod, "module");
+	mu_assert_eq(rz_list_length(mod->public_functions), 5, "5 symbols parsed");
+
+	const ut32 expected_offsets[] = { 0x00, 0x20, 0x20, 0x30, 0x40 };
+	RzListIter *it;
+	RzFlirtFunction *fn;
+	size_t idx = 0;
+	rz_list_foreach (mod->public_functions, it, fn) {
+		mu_assert_eq(fn->offset, expected_offsets[idx], "pat public_functions sorted ascending");
+		idx++;
+	}
+
+	/* Convert .pat -> .sig and parse back: offsets must not underflow */
+	RzBuffer *sig_buf = rz_buf_new_with_bytes(NULL, 0);
+	mu_assert_notnull(sig_buf, "sig_buf");
+	RzFlirtCompressedOptions opts = {
+		.version = 10,
+		.arch = RZ_FLIRT_SIG_ARCH_386,
+		.file = RZ_FLIRT_SIG_FILE_ALL,
+		.os = RZ_FLIRT_SIG_OS_ALL,
+		.app = RZ_FLIRT_SIG_APP_ALL,
+		.deflate = false,
+		.libname = "test_unsorted",
+	};
+	mu_assert_true(rz_sign_flirt_write_compressed_pattern_to_buffer(node, sig_buf, &opts), "write sig");
+	rz_buf_seek(sig_buf, 0, RZ_BUF_SET);
+
+	RzFlirtNode *sig_node = rz_sign_flirt_parse_compressed_pattern_from_buffer(sig_buf, RZ_FLIRT_SIG_ARCH_386, NULL);
+	mu_assert_notnull(sig_node, "parsed sig node");
+	RzFlirtNode *sig_child = rz_list_first_val(sig_node->child_list);
+	mu_assert_notnull(sig_child, "sig child");
+	RzFlirtModule *sig_mod = rz_list_first_val(sig_child->module_list);
+	mu_assert_notnull(sig_mod, "sig module");
+	mu_assert_eq(rz_list_length(sig_mod->public_functions), 5, "5 symbols round-tripped");
+	idx = 0;
+	rz_list_foreach (sig_mod->public_functions, it, fn) {
+		mu_assert_eq(fn->offset, expected_offsets[idx], "sig round-trip offset preserved");
+		idx++;
+	}
+
+	rz_sign_flirt_node_free(sig_node);
+	rz_buf_free(sig_buf);
+	rz_sign_flirt_node_free(node);
+	rz_buf_free(pat_buf);
+	mu_end;
+}
+
+bool test_flirt_pat_unsorted_local_apply_no_delete(void) {
+	/* 0x00..0x20: prelude + ret, 0x20: pub_mid, 0x30: late_loc, 0x40: pub_end, 0x50: boundary, 0x60: outside_fcn */
+	ut8 code[0x80];
+	memset(code, 0x90, sizeof(code));
+	code[0] = 0x55;
+	code[1] = 0x48;
+	code[2] = 0x89;
+	code[3] = 0xe5;
+	code[0x1f] = 0xc3;
+	code[0x2f] = 0xc3;
+	code[0x3f] = 0xc3;
+	code[0x4f] = 0xc3;
+	code[0x5f] = 0xc3;
+	code[0x6f] = 0xc3;
+
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	RzCoreFile *cf = rz_core_file_open(core, "malloc://128", RZ_PERM_RWX, 0);
+	mu_assert_notnull(cf, "open malloc://128");
+	rz_core_bin_load(core, "malloc://128", 0);
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	mu_assert_true(rz_io_write_at(core->io, 0, code, sizeof(code)), "write code");
+
+	const ut64 addrs[] = { 0x00, 0x20, 0x30, 0x40, 0x50, 0x60 };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(addrs); i++) {
+		char name[32];
+		snprintf(name, sizeof(name), "fcn.%08" PFMT64x, addrs[i]);
+		RzAnalysisFunction *f = rz_analysis_create_function(core->analysis, name, addrs[i], RZ_ANALYSIS_FCN_TYPE_FCN);
+		RzAnalysisBlock *bb = rz_analysis_create_block(core->analysis, addrs[i], i == 0 ? 0x20 : 0x10);
+		mu_assert_notnull(f, "create function");
+		mu_assert_notnull(bb, "create block");
+		rz_analysis_function_add_block(f, bb);
+		rz_analysis_block_unref(bb);
+	}
+
+	/* Includes unsorted local (:0030@ before :0020) and symbol at module->length (:0050) */
+	const char *pat =
+		"554889E5909090909090909090909090909090909090909090909090909090C3 00 0000 0050 "
+		":0000@ first_loc :0030@ late_loc :0020 pub_mid :0040 pub_end :0050 at_end\n"
+		"---\n";
+	char *tmp = rz_file_temp("rz_test_flirt_unsorted");
+	mu_assert_notnull(tmp, "rz_file_temp");
+	char *pat_path = rz_str_newf("%s.pat", tmp);
+	free(tmp);
+	mu_assert_notnull(pat_path, "pat_path");
+	mu_assert_true(rz_file_dump(pat_path, (const ut8 *)pat, (int)strlen(pat), false), "dump pat");
+
+	mu_assert_true(rz_sign_flirt_apply(core->analysis, pat_path, RZ_FLIRT_SIG_ARCH_386), "rz_sign_flirt_apply");
+	rz_file_rm(pat_path);
+	free(pat_path);
+
+	/* Outside function at 0x60 must NOT be swallowed/deleted by ut32 underflow */
+	mu_assert_notnull(rz_analysis_get_function_at(core->analysis, 0x60), "function outside module preserved");
+	RzAnalysisFunction *f0 = rz_analysis_get_function_at(core->analysis, 0x00);
+	RzAnalysisFunction *f2 = rz_analysis_get_function_at(core->analysis, 0x20);
+	RzAnalysisFunction *f4 = rz_analysis_get_function_at(core->analysis, 0x40);
+	mu_assert_notnull(f0, "first_loc exists");
+	mu_assert_streq(f0->name, "flirt.first_loc", "first_loc renamed");
+	mu_assert_notnull(f2, "pub_mid exists");
+	mu_assert_streq(f2->name, "flirt.pub_mid", "pub_mid renamed");
+	mu_assert_notnull(f4, "pub_end exists");
+	mu_assert_streq(f4->name, "flirt.pub_end", "pub_end renamed");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	test_flirt_pat_run(parse_signature);
 	test_flirt_pat_run(parse_comment);
@@ -56,6 +185,8 @@ int all_tests() {
 	test_flirt_pat_run(parse_large_function);
 	test_flirt_pat_run(parse_large_offset);
 	test_flirt_pat_run(parse_multiline);
+	mu_run_test(test_flirt_pat_unsorted_local_offsets_sig_roundtrip);
+	mu_run_test(test_flirt_pat_unsorted_local_apply_no_delete);
 	return tests_passed != tests_run;
 }
 

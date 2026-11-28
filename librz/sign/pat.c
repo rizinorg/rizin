@@ -137,6 +137,12 @@ err:
  * The '---' are the pat file terminator
  * Some files may contain comments using hashtag (#) as prefix
  */
+static int cmp_flirt_function_offset(const void *a, const void *b, void *user) {
+	const RzFlirtFunction *fa = a;
+	const RzFlirtFunction *fb = b;
+	return RZ_NUM_CMP(fa->offset, fb->offset);
+}
+
 static bool flirt_pat_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num, bool tail_bytes) {
 	RzFlirtNode *child = NULL;
 	RzFlirtModule *module = NULL;
@@ -330,6 +336,7 @@ static bool flirt_pat_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		RZ_LOG_ERROR("FLIRT: a node must have at least one public function\n");
 		goto err;
 	}
+	rz_list_sort(module->public_functions, cmp_flirt_function_offset, NULL);
 
 	if (!rz_list_append(root->child_list, child)) {
 		RZ_LOG_ERROR("FLIRT: cannot append child to root\n");
